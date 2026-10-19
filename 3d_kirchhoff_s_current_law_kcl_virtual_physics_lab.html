@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Kirchhoff's Current Law (KCL) — 3D Virtual Physics Lab</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Three.js & OrbitControls CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <style>
+    :root {
+      --bg-dark: #050914;
+      --cyan-glow: #00f2fe;
+      --blue-glow: #4facfe;
+      --emerald-glow: #10b981;
+      --amber-glow: #f59e0b;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg-dark);
+      font-family: 'Inter', sans-serif;
+      color: #f1f5f9;
+    }
+
+    .font-mono-tech {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Glassmorphism panels */
+    .glass-panel {
+      background: rgba(10, 18, 36, 0.72);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(56, 189, 248, 0.22);
+      box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.7), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+    }
+
+    .glass-panel-interactive {
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .glass-panel-interactive:hover {
+      border-color: rgba(56, 189, 248, 0.45);
+      box-shadow: 0 14px 36px -4px rgba(0, 242, 254, 0.14), inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
+    }
+
+    /* Custom Range Sliders */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      background: rgba(30, 41, 59, 0.9);
+      border-radius: 999px;
+      outline: none;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #38bdf8;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.8);
+      border: 2px solid #ffffff;
+      transition: transform 0.15s ease, background-color 0.15s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.18);
+      background: #7dd3fc;
+    }
+
+    input[type="range"].amber-slider::-webkit-slider-thumb {
+      background: #fbbf24;
+      box-shadow: 0 0 10px rgba(251, 191, 36, 0.8);
+    }
+
+    input[type="range"].emerald-slider::-webkit-slider-thumb {
+      background: #34d399;
+      box-shadow: 0 0 10px rgba(52, 211, 153, 0.8);
+    }
+
+    /* 3D Floating HTML Labels */
+    .scene-label {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      pointer-events: auto;
+      cursor: pointer;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+      transition: transform 0.15s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      background: rgba(8, 15, 32, 0.85);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: #e0f2fe;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+      z-index: 5;
+    }
+
+    .scene-label:hover {
+      transform: translate(-50%, -50%) scale(1.08);
+      border-color: #38bdf8;
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.5);
+    }
+
+    .scene-label.active-probe {
+      border-color: #fbbf24;
+      box-shadow: 0 0 16px rgba(251, 191, 36, 0.65);
+    }
+
+    .scene-label.highlight-step {
+      animation: pulse-ring 1.3s infinite;
+    }
+
+    @keyframes pulse-ring {
+      0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.8); }
+      70% { box-shadow: 0 0 0 12px rgba(56, 189, 248, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+    }
+
+    /* Custom Scrollbar for panels */
+    .custom-scroll::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.4);
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(56, 189, 248, 0.35);
+      border-radius: 999px;
+    }
+
+    /* Glow Text */
+    .text-glow-cyan {
+      text-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
+    }
+    .text-glow-emerald {
+      text-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
+    }
+    .text-glow-amber {
+      text-shadow: 0 0 12px rgba(245, 158, 11, 0.6);
+    }
+  </style>
+</head>
+<body class="relative w-screen h-screen overflow-hidden select-none">
+
+  <!-- 3D CANVAS CONTAINER -->
+  <div id="canvas-container" class="absolute inset-0 w-full h-full z-0"></div>
+
+  <!-- 3D FLOATING LABELS OVERLAY -->
+  <div id="labels-container" class="absolute inset-0 pointer-events-none z-10 overflow-hidden">
+    <div id="label-i1" onclick="selectBranch('I1')" class="scene-label" title="Click to place Ammeter on Branch 1">
+      <span class="text-cyan-400">I₁</span> = <span id="lbl-val-i1">2.00A</span> <span class="text-cyan-300">→</span>
+    </div>
+    <div id="label-i2" onclick="selectBranch('I2')" class="scene-label" title="Click to place Ammeter on Branch 2">
+      <span class="text-sky-400">I₂</span> = <span id="lbl-val-i2">1.00A</span> <span class="text-sky-300">→</span>
+    </div>
+    <div id="label-j" onclick="selectBranch('J')" class="scene-label !bg-slate-900/95 !border-fuchsia-400/50" title="Central Junction Node J₁">
+      <span class="text-fuchsia-400 font-bold">● Node J₁</span> (<span id="lbl-val-j">3.00A</span>)
+    </div>
+    <div id="label-i3" onclick="selectBranch('I3')" class="scene-label" title="Click to place Ammeter on Branch 3">
+      <span class="text-emerald-400">I₃</span> = <span id="lbl-val-i3">2.00A</span> <span class="text-emerald-300">→</span>
+    </div>
+    <div id="label-i4" onclick="selectBranch('I4')" class="scene-label" title="Click to place Ammeter on Branch 4">
+      <span class="text-teal-400">I₄</span> = <span id="lbl-val-i4">1.00A</span> <span class="text-teal-300">→</span>
+    </div>
+  </div>
+
+  <!-- TOP NAVIGATION BAR -->
+  <header class="fixed top-3 left-3 right-3 z-30 flex items-center justify-between pointer-events-none">
+    <!-- Branding Title -->
+    <div class="glass-panel px-4 py-2.5 rounded-2xl flex items-center gap-3 pointer-events-auto">
+      <div class="w-9 h-9 rounded-xl bg-cyan-500/20 border border-cyan-400/50 flex items-center justify-center text-cyan-300 font-mono-tech font-bold text-sm shadow-inner">
+        ΣI
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-sm sm:text-base font-bold tracking-tight text-white">Kirchhoff's Current Law Lab</h1>
+          <span class="hidden sm:inline-block text-[10px] font-mono-tech uppercase px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/30">KCL · 1st Law</span>
+        </div>
+        <p class="text-[11px] text-slate-300 hidden sm:block">Conservation of Electric Charge at a Circuit Junction: <span class="font-mono-tech text-cyan-300">ΣI(in) = ΣI(out)</span></p>
+      </div>
+    </div>
+
+    <!-- Mode & Camera Controls -->
+    <div class="flex items-center gap-2 pointer-events-auto">
+      <button onclick="toggleAllPanels()" class="glass-panel glass-panel-interactive px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-cyan-300 hover:text-white flex items-center gap-2 border-cyan-400/40 bg-cyan-950/40">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>
+        <span id="lbl-toggle-all-panels">Full 3D View</span>
+      </button>
+      <button id="btn-learn-mode" onclick="toggleLearnMode()" class="glass-panel glass-panel-interactive px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-amber-300 hover:text-white flex items-center gap-2 border-amber-400/40 bg-amber-950/40">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        <span>Learn KCL</span>
+      </button>
+      <button onclick="toggleChallengeModal()" class="glass-panel glass-panel-interactive px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-emerald-300 hover:text-white flex items-center gap-2 border-emerald-400/40 bg-emerald-950/40">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span>Challenge</span>
+      </button>
+      <button onclick="resetCamera()" class="hidden sm:flex glass-panel glass-panel-interactive px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white items-center gap-1.5" title="Reset Camera View">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+        <span>Reset Cam</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- FLOATING EDGE TABS FOR REOPENING COLLAPSED PANELS -->
+  <button id="btn-open-left" onclick="toggleLeftPanel(true)" class="hidden fixed left-0 top-1/2 -translate-y-1/2 z-20 glass-panel px-2 py-4 rounded-r-2xl border-l-0 border-cyan-400/50 text-cyan-300 items-center gap-1 font-mono-tech text-xs tracking-wider shadow-2xl transition hover:bg-cyan-950/80">
+    <span style="writing-mode: vertical-rl;">KCL & AMMETER ▸</span>
+  </button>
+  
+  <button id="btn-open-right" onclick="toggleRightPanel(true)" class="hidden fixed right-0 top-1/2 -translate-y-1/2 z-20 glass-panel px-2 py-4 rounded-l-2xl border-r-0 border-cyan-400/50 text-cyan-300 items-center gap-1 font-mono-tech text-xs tracking-wider shadow-2xl transition hover:bg-cyan-950/80">
+    <span style="writing-mode: vertical-rl;">◂ CONTROLS</span>
+  </button>
+
+  <!-- MAIN UI LAYOUT WRAPPER -->
+  <div class="absolute inset-0 pt-20 pb-3 px-3 pointer-events-none flex justify-between items-start z-20 overflow-hidden">
+
+    <!-- LEFT PANEL: KCL LIVE TELEMETRY & AMMETER PROBE -->
+    <div id="panel-left" class="w-80 sm:w-88 flex flex-col gap-3 h-full max-h-[calc(100vh-6rem)] pointer-events-auto transition-all duration-300 custom-scroll overflow-y-auto pr-1">
+      
+      <!-- KCL Live Telemetry Card -->
+      <div id="card-kcl" class="glass-panel p-4 sm:p-5 rounded-2xl relative shadow-2xl">
+        <!-- Collapse Button -->
+        <button onclick="toggleLeftPanel(false)" class="absolute top-3 right-3 w-7 h-7 rounded-lg bg-slate-800/80 border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white hover:border-cyan-400 transition" title="Minimize Panel">
+          ✕
+        </button>
+
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping"></div>
+          <h2 class="text-xs font-mono-tech uppercase tracking-wider text-cyan-300 font-bold">Live KCL Telemetry</h2>
+        </div>
+
+        <div class="text-xs font-mono-tech text-slate-300 mb-3 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800 text-center">
+          <div class="text-cyan-400 font-bold tracking-wide" id="kcl-symbolic-eq">I₁ + I₂ = I₃ + I₄</div>
+          <div class="text-[11px] text-slate-400 mt-0.5" id="kcl-numeric-eq">2.00A + 1.00A = 2.00A + 1.00A</div>
+        </div>
+
+        <div class="space-y-2.5 text-xs">
+          <!-- Incoming Section -->
+          <div class="rounded-xl bg-cyan-950/30 border border-cyan-500/30 p-3 space-y-1.5">
+            <div class="text-cyan-300 font-bold flex justify-between items-center">
+              <span>Incoming Currents (ΣI₏)</span>
+              <span class="font-mono-tech text-sm" id="kcl-in-total">3.00 A</span>
+            </div>
+            <div class="flex justify-between text-slate-300 pl-2">
+              <span>Branch 1 (I₁):</span>
+              <span class="font-mono-tech text-cyan-400" id="kcl-i1">2.00 A</span>
+            </div>
+            <div class="flex justify-between text-slate-300 pl-2">
+              <span>Branch 2 (I₂):</span>
+              <span class="font-mono-tech text-sky-400" id="kcl-i2">1.00 A</span>
+            </div>
+          </div>
+
+          <!-- Outgoing Section -->
+          <div class="rounded-xl bg-emerald-950/30 border border-emerald-500/30 p-3 space-y-1.5">
+            <div class="text-emerald-300 font-bold flex justify-between items-center">
+              <span>Outgoing Currents (ΣIₒᵤₜ)</span>
+              <span class="font-mono-tech text-sm" id="kcl-out-total">3.00 A</span>
+            </div>
+            <div class="flex justify-between text-slate-300 pl-2">
+              <span>Branch 3 (I₃):</span>
+              <span class="font-mono-tech text-emerald-400" id="kcl-i3">2.00 A</span>
+            </div>
+            <div id="row-kcl-i4" class="flex justify-between text-slate-300 pl-2">
+              <span>Branch 4 (I₄):</span>
+              <span class="font-mono-tech text-teal-400" id="kcl-i4">1.00 A</span>
+            </div>
+          </div>
+
+          <!-- Verification Badge -->
+          <div class="rounded-xl bg-slate-900/90 border border-emerald-400/50 p-2.5 flex items-center justify-between text-emerald-300 font-bold shadow-inner">
+            <div class="flex items-center gap-2">
+              <span class="text-base">✓</span>
+              <span>KCL VERIFIED</span>
+            </div>
+            <span class="font-mono-tech text-sm tracking-wide text-emerald-400" id="kcl-equality-readout">3.00A = 3.00A</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Virtual Ammeter Card -->
+      <div id="card-ammeter" class="glass-panel p-4 sm:p-5 rounded-2xl relative shadow-2xl">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <div class="w-2.5 h-2.5 rounded-full bg-amber-400"></div>
+            <h3 class="text-xs font-mono-tech uppercase tracking-wider text-amber-300 font-bold">Virtual Ammeter</h3>
+          </div>
+          <span class="text-[10px] font-mono-tech px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-400/30">Select Branch</span>
+        </div>
+
+        <div class="bg-black/85 border-2 border-amber-500/50 rounded-xl p-3.5 text-center mb-3 shadow-inner">
+          <div class="text-[10px] font-mono-tech text-amber-400/80 tracking-widest uppercase mb-0.5" id="ammeter-branch-tag">Branch I₁ (In)</div>
+          <div class="text-2xl sm:text-3xl font-mono-tech font-extrabold text-amber-300 text-glow-amber tracking-wider" id="ammeter-lcd">2.00 A</div>
+          <div class="text-[10px] font-mono-tech text-slate-400 mt-1" id="ammeter-detail">V₁ = 12.0V | R₁ = 6.0Ω</div>
+        </div>
+
+        <div class="grid grid-cols-5 gap-1.5 text-xs font-mono-tech">
+          <button id="probe-btn-I1" onclick="selectBranch('I1')" class="py-1.5 rounded-lg border border-amber-400 bg-amber-500/25 text-white font-bold transition">I₁</button>
+          <button id="probe-btn-I2" onclick="selectBranch('I2')" class="py-1.5 rounded-lg border border-slate-700 bg-slate-800/70 text-slate-300 hover:border-cyan-400 transition">I₂</button>
+          <button id="probe-btn-J"  onclick="selectBranch('J')"  class="py-1.5 rounded-lg border border-slate-700 bg-slate-800/70 text-slate-300 hover:border-cyan-400 transition">Node</button>
+          <button id="probe-btn-I3" onclick="selectBranch('I3')" class="py-1.5 rounded-lg border border-slate-700 bg-slate-800/70 text-slate-300 hover:border-cyan-400 transition">I₃</button>
+          <button id="probe-btn-I4" onclick="selectBranch('I4')" class="py-1.5 rounded-lg border border-slate-700 bg-slate-800/70 text-slate-300 hover:border-cyan-400 transition">I₄</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL: INTERACTIVE CONTROLS -->
+    <div id="panel-right" class="w-80 sm:w-88 flex flex-col gap-3 h-full max-h-[calc(100vh-6rem)] pointer-events-auto transition-all duration-300 custom-scroll overflow-y-auto pl-1">
+      <div class="glass-panel p-4 sm:p-5 rounded-2xl relative shadow-2xl space-y-4">
+        <!-- Collapse Button -->
+        <button onclick="toggleRightPanel(false)" class="absolute top-3 right-3 w-7 h-7 rounded-lg bg-slate-800/80 border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white hover:border-cyan-400 transition" title="Minimize Panel">
+          ✕
+        </button>
+
+        <div class="flex items-center gap-2">
+          <div class="w-2.5 h-2.5 rounded-full bg-blue-400"></div>
+          <h3 class="text-xs font-mono-tech uppercase tracking-wider text-blue-300 font-bold">Circuit Parameters</h3>
+        </div>
+
+        <!-- Power & Branch Config Toggles -->
+        <div class="grid grid-cols-2 gap-2">
+          <button id="btn-power" onclick="togglePower()" class="px-2.5 py-2 rounded-xl font-mono-tech text-xs font-bold flex items-center justify-center gap-1.5 bg-emerald-500/20 text-emerald-300 border border-emerald-400/50 shadow-sm transition">
+            <span id="power-dot" class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981]"></span>
+            <span id="power-label">PWR: ON</span>
+          </button>
+          <button id="btn-toggle-b4" onclick="toggleFourthBranch()" class="px-2.5 py-2 rounded-xl font-mono-tech text-xs font-semibold bg-slate-800/80 text-cyan-300 border border-cyan-500/30 hover:border-cyan-400 transition">
+            4 Branches: ON
+          </button>
+        </div>
+
+        <!-- Sliders Form -->
+        <div class="space-y-3.5 text-xs">
+          <!-- V1 Slider -->
+          <div class="space-y-1">
+            <div class="flex justify-between items-center text-slate-300">
+              <span>Source Voltage V₁</span>
+              <span class="font-mono-tech text-cyan-300 font-bold" id="val-v1">12.0 V</span>
+            </div>
+            <input id="slider-v1" type="range" min="4" max="24" step="0.5" value="12" oninput="updateCircuitFromUI()">
+          </div>
+
+          <!-- R1 Slider -->
+          <div class="space-y-1">
+            <div class="flex justify-between items-center text-slate-300">
+              <span class="flex items-center gap-1">Resistance R₁ <span class="text-[10px] text-cyan-400 font-mono-tech" id="ctrl-readout-i1">I₁ = 2.00A</span></span>
+              <span class="font-mono-tech text-cyan-300 font-bold" id="val-r1">6.0 Ω</span>
+            </div>
+            <input id="slider-r1" type="range" min="2" max="20" step="0.5" value="6" oninput="updateCircuitFromUI()">
+          </div>
+
+          <div class="border-t border-slate-800/80 pt-2"></div>
+
+          <!-- V2 Slider -->
+          <div class="space-y-1">
+            <div class="flex justify-between items-center text-slate-300">
+              <span>Source Voltage V₂</span>
+              <span class="font-mono-tech text-sky-300 font-bold" id="val-v2">12.0 V</span>
+            </div>
+            <input id="slider-v2" type="range" min="4" max="24" step="0.5" value="12" oninput="updateCircuitFromUI()">
+          </div>
+
+          <!-- R2 Slider -->
+          <div class="space-y-1">
+            <div class="flex justify-between items-center text-slate-300">
+              <span class="flex items-center gap-1">Resistance R₂ <span class="text-[10px] text-sky-400 font-mono-tech" id="ctrl-readout-i2">I₂ = 1.00A</span></span>
+              <span class="font-mono-tech text-sky-300 font-bold" id="val-r2">12.0 Ω</span>
+            </div>
+            <input id="slider-r2" type="range" min="2" max="20" step="0.5" value="12" oninput="updateCircuitFromUI()">
+          </div>
+
+          <div class="border-t border-slate-800/80 pt-2"></div>
+
+          <!-- R3 Slider -->
+          <div class="space-y-1">
+            <div class="flex justify-between items-center text-slate-300">
+              <span class="flex items-center gap-1">Load R₃ <span class="text-[10px] text-emerald-400 font-mono-tech" id="ctrl-readout-i3">2.00A</span></span>
+              <span class="font-mono-tech text-emerald-300 font-bold" id="val-r3">4.0 Ω</span>
+            </div>
+            <input id="slider-r3" type="range" min="2" max="20" step="0.5" value="4" class="emerald-slider" oninput="updateCircuitFromUI()">
+          </div>
+
+          <!-- R4 Slider -->
+          <div id="ctrl-group-r4" class="space-y-1">
+            <div class="flex justify-between items-center text-slate-300">
+              <span class="flex items-center gap-1">Load R₄ <span class="text-[10px] text-teal-400 font-mono-tech" id="ctrl-readout-i4">1.00A</span></span>
+              <span class="font-mono-tech text-teal-300 font-bold" id="val-r4">8.0 Ω</span>
+            </div>
+            <input id="slider-r4" type="range" min="2" max="20" step="0.5" value="8" class="emerald-slider" oninput="updateCircuitFromUI()">
+          </div>
+
+          <div class="border-t border-slate-800/80 pt-2"></div>
+
+          <!-- Simulation Speed Slider -->
+          <div class="space-y-1">
+            <div class="flex justify-between items-center text-slate-300">
+              <span>Particle Flow Speed</span>
+              <span class="font-mono-tech text-amber-300 font-bold" id="val-speed">1.0x</span>
+            </div>
+            <input id="slider-speed" type="range" min="0.2" max="3.0" step="0.1" value="1.0" class="amber-slider" oninput="updateCircuitFromUI()">
+          </div>
+        </div>
+
+        <!-- Reset Button -->
+        <button onclick="resetExperiment()" class="w-full py-2.5 rounded-xl border border-rose-500/40 bg-rose-950/30 hover:bg-rose-900/40 text-rose-300 font-semibold text-xs tracking-wider uppercase transition shadow-sm flex items-center justify-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          <span>Reset Experiment</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GUIDED LEARNING MODE OVERLAY -->
+  <div id="learn-overlay" class="hidden fixed inset-0 z-40 pointer-events-none flex items-end sm:items-center justify-center pb-6 sm:pb-0 px-4">
+    <div class="glass-panel p-6 rounded-3xl max-w-lg w-full pointer-events-auto border-cyan-400/50 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-200">
+      <div class="flex items-center justify-between">
+        <span id="learn-step-badge" class="px-2.5 py-1 rounded-full text-[10px] font-mono-tech uppercase bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 font-bold">STEP 1 OF 4</span>
+        <button onclick="closeLearnMode()" class="w-7 h-7 rounded-lg bg-slate-800/80 border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition">✕</button>
+      </div>
+      <div>
+        <h3 id="learn-step-title" class="text-base sm:text-lg font-bold text-white mb-1">The Central Junction (Node J₁)</h3>
+        <p id="learn-step-desc" class="text-xs sm:text-sm text-slate-300 leading-relaxed">"This is a junction where multiple branches meet." Electric charge cannot accumulate or vanish at this node.</p>
+      </div>
+      <div id="learn-step-eq-box" class="hidden bg-slate-950/80 p-3 rounded-xl border border-cyan-500/30 font-mono-tech text-xs text-center space-y-1">
+        <div id="learn-eq-line1" class="text-cyan-400 font-bold">I₁ + I₂ = I₃ + I₄</div>
+        <div id="learn-eq-line2" class="text-slate-300">2.00A + 1.00A = 2.00A + 1.00A</div>
+        <div class="text-emerald-400 font-bold pt-1">✓ KCL SATISFIED</div>
+      </div>
+      <div class="flex items-center justify-between pt-2">
+        <div class="flex items-center gap-1.5">
+          <div id="dot-1" class="w-6 h-1.5 rounded-full bg-cyan-400"></div>
+          <div id="dot-2" class="w-6 h-1.5 rounded-full bg-slate-700"></div>
+          <div id="dot-3" class="w-6 h-1.5 rounded-full bg-slate-700"></div>
+          <div id="dot-4" class="w-6 h-1.5 rounded-full bg-slate-700"></div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="changeLearnStep(-1)" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition border border-slate-700">Back</button>
+          <button onclick="changeLearnStep(1)" class="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold transition shadow-lg shadow-cyan-500/20">Next Step</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHALLENGE MODE MODAL -->
+  <div id="challenge-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel p-6 sm:p-7 rounded-3xl max-w-md w-full border-emerald-400/50 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-200">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
+          <h3 class="text-xs font-mono-tech uppercase tracking-wider text-emerald-300 font-bold">KCL Challenge (<span id="ch-q-num">1</span>/4)</h3>
+        </div>
+        <button onclick="toggleChallengeModal()" class="w-7 h-7 rounded-lg bg-slate-800/80 border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition">✕</button>
+      </div>
+
+      <div id="ch-progress-bar" class="flex gap-1.5">
+        <div class="h-1.5 flex-1 rounded-full bg-emerald-400"></div>
+        <div class="h-1.5 flex-1 rounded-full bg-slate-700"></div>
+        <div class="h-1.5 flex-1 rounded-full bg-slate-700"></div>
+        <div class="h-1.5 flex-1 rounded-full bg-slate-700"></div>
+      </div>
+
+      <div class="text-sm font-medium text-white leading-relaxed" id="ch-prompt">
+        5A enters a junction. 2A leaves through one branch. What current leaves through the second branch?
+      </div>
+
+      <div class="flex items-center gap-2">
+        <input id="ch-input" type="number" step="0.1" placeholder="Enter Amps" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 font-mono-tech text-sm text-white focus:outline-none focus:border-emerald-400">
+        <span class="font-mono-tech text-slate-400 font-bold">A</span>
+        <button onclick="checkChallengeAnswer()" class="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/20">Check</button>
+      </div>
+
+      <div id="ch-feedback" class="hidden rounded-xl p-3 text-xs space-y-1"></div>
+
+      <div class="flex items-center justify-between pt-2 border-t border-slate-800">
+        <button onclick="loadChallengeInto3D()" class="text-xs font-semibold text-cyan-300 hover:text-white flex items-center gap-1.5">
+          <span>Load Preset in 3D Lab →</span>
+        </button>
+        <div class="flex items-center gap-2">
+          <button onclick="prevChallenge()" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs font-semibold border border-slate-700">Prev</button>
+          <button onclick="nextChallenge()" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs font-semibold border border-slate-700">Next</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /********************************************************************
+     * 1. CIRCUIT SIMULATION STATE
+     ********************************************************************/
+    const circuitState = {
+      v1: 12,
+      r1: 6,
+      v2: 12,
+      r2: 12,
+      r3: 4,
+      r4: 8,
+      fourBranches: true,
+      powerOn: true,
+      simSpeed: 1.0,
+      selectedBranch: 'I1',
+      i1: 2.0,
+      i2: 1.0,
+      iInTotal: 3.0,
+      i3: 2.0,
+      i4: 1.0,
+      iOutTotal: 3.0
+    };
+
+    /********************************************************************
+     * 2. THREE.JS SCENE, CAMERA, RENDERER & ORBIT CONTROLS
+     ********************************************************************/
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x050914, 0.016);
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 200);
+    const defaultCamPos = new THREE.Vector3(0, 13.5, 17.5);
+    const defaultLookAt = new THREE.Vector3(0, 0.4, 0);
+    camera.position.copy(defaultCamPos);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.maxPolarAngle = Math.PI / 2 - 0.04;
+    controls.minDistance = 6;
+    controls.maxDistance = 36;
+    controls.target.copy(defaultLookAt);
+
+    let camAnimTargetPos = null;
+    let camAnimLookAt = null;
+
+    function resetCamera() {
+      camAnimTargetPos = defaultCamPos.clone();
+      camAnimLookAt = defaultLookAt.clone();
+    }
+
+    /********************************************************************
+     * 3. LIGHTING & LABORATORY ENVIRONMENT
+     ********************************************************************/
+    const ambientLight = new THREE.AmbientLight(0x94a3b8, 0.75);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xe0f2fe, 1.15);
+    dirLight.position.set(10, 22, 14);
+    dirLight.castShadow = true;
+    scene.add(dirLight);
+
+    const nodePointLight = new THREE.PointLight(0x38bdf8, 1.8, 16);
+    nodePointLight.position.set(0, 1.8, 0);
+    scene.add(nodePointLight);
+
+    const gridHelper = new THREE.GridHelper(48, 48, 0x1e3a8a, 0x0f172a);
+    gridHelper.position.y = -0.5;
+    scene.add(gridHelper);
+
+    const boardGeo = new THREE.BoxGeometry(20, 0.5, 13);
+    const boardMat = new THREE.MeshStandardMaterial({
+      color: 0x081226,
+      roughness: 0.35,
+      metalness: 0.45
+    });
+    const boardMesh = new THREE.Mesh(boardGeo, boardMat);
+    boardMesh.position.y = -0.25;
+    boardMesh.receiveShadow = true;
+    scene.add(boardMesh);
+
+    /********************************************************************
+     * 4. 3D CIRCUIT WIRES, JUNCTION, RESISTORS, SOURCES & AMMETER PROBE
+     ********************************************************************/
+    const wireY = 0.55;
+    const junctionPos = new THREE.Vector3(0, wireY, 0);
+
+    const branchCurves = {
+      I1: new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-7.5, wireY, -3.4),
+        new THREE.Vector3(-3.2, wireY, -3.4),
+        new THREE.Vector3(-1.2, wireY, -1.2),
+        junctionPos
+      ]),
+      I2: new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-7.5, wireY, 3.4),
+        new THREE.Vector3(-3.2, wireY, 3.4),
+        new THREE.Vector3(-1.2, wireY, 1.2),
+        junctionPos
+      ]),
+      I3: new THREE.CatmullRomCurve3([
+        junctionPos,
+        new THREE.Vector3(1.2, wireY, -1.2),
+        new THREE.Vector3(3.2, wireY, -3.4),
+        new THREE.Vector3(7.5, wireY, -3.4)
+      ]),
+      I4: new THREE.CatmullRomCurve3([
+        junctionPos,
+        new THREE.Vector3(1.2, wireY, 1.2),
+        new THREE.Vector3(3.2, wireY, 3.4),
+        new THREE.Vector3(7.5, wireY, 3.4)
+      ])
+    };
+
+    const branchMeshes = {};
+    const branchColors = {
+      I1: 0x00f2fe,
+      I2: 0x38bdf8,
+      I3: 0x10b981,
+      I4: 0x14b8a6
+    };
+
+    const interactiveMeshes = [];
+
+    Object.keys(branchCurves).forEach(key => {
+      const tubeGeo = new THREE.TubeGeometry(branchCurves[key], 44, 0.14, 16, false);
+      const tubeMat = new THREE.MeshStandardMaterial({
+        color: branchColors[key],
+        emissive: branchColors[key],
+        emissiveIntensity: 0.35,
+        roughness: 0.25,
+        metalness: 0.6
+      });
+      const mesh = new THREE.Mesh(tubeGeo, tubeMat);
+      mesh.userData = { branchId: key };
+      scene.add(mesh);
+      branchMeshes[key] = mesh;
+      interactiveMeshes.push(mesh);
+    });
+
+    const returnLoopCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(7.5, wireY, -3.4),
+      new THREE.Vector3(8.6, wireY, -3.4),
+      new THREE.Vector3(8.6, wireY, 5.2),
+      new THREE.Vector3(-8.6, wireY, 5.2),
+      new THREE.Vector3(-8.6, wireY, -3.4),
+      new THREE.Vector3(-7.5, wireY, -3.4)
+    ]);
+    const returnTube = new THREE.Mesh(
+      new THREE.TubeGeometry(returnLoopCurve, 64, 0.08, 12, false),
+      new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6, metalness: 0.5 })
+    );
+    scene.add(returnTube);
+
+    const junctionCore = new THREE.Mesh(
+      new THREE.SphereGeometry(0.46, 32, 32),
+      new THREE.MeshStandardMaterial({
+        color: 0xe879f9,
+        emissive: 0xd946ef,
+        emissiveIntensity: 0.85,
+        roughness: 0.15
+      })
+    );
+    junctionCore.position.copy(junctionPos);
+    junctionCore.userData = { branchId: 'J' };
+    scene.add(junctionCore);
+    interactiveMeshes.push(junctionCore);
+
+    const junctionHalo = new THREE.Mesh(
+      new THREE.RingGeometry(0.62, 0.86, 36),
+      new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0.7 })
+    );
+    junctionHalo.rotation.x = -Math.PI / 2;
+    junctionHalo.position.set(0, wireY - 0.15, 0);
+    scene.add(junctionHalo);
+
+    function createPowerSource(x, z, colorHex) {
+      const group = new THREE.Group();
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(1.5, 1.2, 1.3),
+        new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.3, metalness: 0.7 })
+      );
+      body.position.y = 0.6;
+      group.add(body);
+
+      const stripe = new THREE.Mesh(
+        new THREE.BoxGeometry(1.54, 0.25, 1.34),
+        new THREE.MeshBasicMaterial({ color: colorHex })
+      );
+      stripe.position.y = 0.9;
+      group.add(stripe);
+
+      group.position.set(x, 0, z);
+      scene.add(group);
+      return group;
+    }
+
+    createPowerSource(-7.5, -3.4, 0x00f2fe);
+    createPowerSource(-7.5, 3.4, 0x38bdf8);
+
+    function createResistor(x, z, bandColor) {
+      const group = new THREE.Group();
+      const cyl = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.28, 0.28, 1.45, 24),
+        new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.35, metalness: 0.4 })
+      );
+      cyl.rotation.z = Math.PI / 2;
+      group.add(cyl);
+
+      [-0.38, 0, 0.38].forEach((offset, idx) => {
+        const ring = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.295, 0.295, 0.14, 24),
+          new THREE.MeshBasicMaterial({ color: idx === 1 ? 0xfbbf24 : bandColor })
+        );
+        ring.rotation.z = Math.PI / 2;
+        ring.position.x = offset;
+        group.add(ring);
+      });
+
+      group.position.set(x, wireY, z);
+      scene.add(group);
+      return group;
+    }
+
+    const resMeshes = {
+      R1: createResistor(-4.7, -3.4, 0x00f2fe),
+      R2: createResistor(-4.7, 3.4, 0x38bdf8),
+      R3: createResistor(4.7, -3.4, 0x10b981),
+      R4: createResistor(4.7, 3.4, 0x14b8a6)
+    };
+
+    const arrowCones = {};
+    Object.keys(branchCurves).forEach(key => {
+      const curve = branchCurves[key];
+      const pt = curve.getPointAt(0.55);
+      const tangent = curve.getTangentAt(0.55).normalize();
+      const cone = new THREE.Mesh(
+        new THREE.ConeGeometry(0.24, 0.55, 16),
+        new THREE.MeshBasicMaterial({ color: branchColors[key] })
+      );
+      cone.position.copy(pt).add(new THREE.Vector3(0, 0.32, 0));
+      cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tangent);
+      scene.add(cone);
+      arrowCones[key] = cone;
+    });
+
+    const clampRing = new THREE.Mesh(
+      new THREE.TorusGeometry(0.44, 0.08, 16, 36),
+      new THREE.MeshStandardMaterial({
+        color: 0xfbbf24,
+        emissive: 0xf59e0b,
+        emissiveIntensity: 0.75,
+        roughness: 0.2
+      })
+    );
+    scene.add(clampRing);
+
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    let pointerDownPos = { x: 0, y: 0 };
+
+    renderer.domElement.addEventListener('pointerdown', e => {
+      pointerDownPos = { x: e.clientX, y: e.clientY };
+    });
+
+    renderer.domElement.addEventListener('pointerup', e => {
+      const dist = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
+      if (dist > 6) return;
+      pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+      pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(pointer, camera);
+      const hits = raycaster.intersectObjects(interactiveMeshes, false);
+      if (hits.length > 0 && hits[0].object.userData.branchId) {
+        selectBranch(hits[0].object.userData.branchId);
+      }
+    });
+
+    /********************************************************************
+     * 5. ANIMATED GLOWING CURRENT PARTICLES
+     ********************************************************************/
+    const PARTICLES_PER_BRANCH = 18;
+    const branchParticles = { I1: [], I2: [], I3: [], I4: [] };
+    const particleGeo = new THREE.SphereGeometry(0.16, 12, 12);
+
+    Object.keys(branchCurves).forEach(key => {
+      const mat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      for (let i = 0; i < PARTICLES_PER_BRANCH; i++) {
+        const p = new THREE.Mesh(particleGeo, mat.clone());
+        p.userData = { t: i / PARTICLES_PER_BRANCH };
+        scene.add(p);
+        branchParticles[key].push(p);
+      }
+    });
+
+    function updateParticles(dt) {
+      const branchCurrents = {
+        I1: circuitState.i1,
+        I2: circuitState.i2,
+        I3: circuitState.i3,
+        I4: circuitState.fourBranches ? circuitState.i4 : 0
+      };
+
+      Object.keys(branchParticles).forEach(key => {
+        const currentVal = branchCurrents[key];
+        const curve = branchCurves[key];
+        const list = branchParticles[key];
+
+        const activeCount = (!circuitState.powerOn || currentVal <= 0.01)
+          ? 0
+          : Math.min(PARTICLES_PER_BRANCH, Math.max(4, Math.round(currentVal * 4.5)));
+
+        const speed = currentVal * 0.22 * circuitState.simSpeed;
+
+        list.forEach((p, idx) => {
+          if (idx >= activeCount) {
+            p.visible = false;
+            return;
+          }
+          p.visible = true;
+          p.userData.t = (p.userData.t + dt * speed) % 1;
+          const pos = curve.getPointAt(p.userData.t);
+          p.position.copy(pos);
+
+          const s = 0.75 + Math.min(0.65, currentVal * 0.12);
+          p.scale.setScalar(s);
+          p.material.color.setHex(key === 'I1' || key === 'I2' ? 0x7dd3fc : 0x6ee7b7);
+        });
+      });
+    }
+
+    /********************************************************************
+     * 6. KCL & OHM'S LAW CALCULATIONS + UI SYNCHRONIZATION
+     ********************************************************************/
+    function recalculateKCL() {
+      if (!circuitState.powerOn) {
+        circuitState.i1 = 0;
+        circuitState.i2 = 0;
+        circuitState.iInTotal = 0;
+        circuitState.i3 = 0;
+        circuitState.i4 = 0;
+        circuitState.iOutTotal = 0;
+        return;
+      }
+
+      circuitState.i1 = circuitState.v1 / circuitState.r1;
+      circuitState.i2 = circuitState.v2 / circuitState.r2;
+      circuitState.iInTotal = circuitState.i1 + circuitState.i2;
+
+      if (circuitState.fourBranches) {
+        const rSum = circuitState.r3 + circuitState.r4;
+        circuitState.i3 = circuitState.iInTotal * (circuitState.r4 / rSum);
+        circuitState.i4 = circuitState.iInTotal * (circuitState.r3 / rSum);
+      } else {
+        circuitState.i3 = circuitState.iInTotal;
+        circuitState.i4 = 0;
+      }
+      circuitState.iOutTotal = circuitState.i3 + circuitState.i4;
+    }
+
+    function updateCircuitFromUI() {
+      circuitState.v1 = parseFloat(document.getElementById('slider-v1').value);
+      circuitState.r1 = parseFloat(document.getElementById('slider-r1').value);
+      circuitState.v2 = parseFloat(document.getElementById('slider-v2').value);
+      circuitState.r2 = parseFloat(document.getElementById('slider-r2').value);
+      circuitState.r3 = parseFloat(document.getElementById('slider-r3').value);
+      circuitState.r4 = parseFloat(document.getElementById('slider-r4').value);
+      circuitState.simSpeed = parseFloat(document.getElementById('slider-speed').value);
+
+      recalculateKCL();
+      refreshAllUI();
+    }
+
+    function refreshAllUI() {
+      recalculateKCL();
+
+      const fmt = v => v.toFixed(2);
+
+      document.getElementById('lbl-val-i1').textContent = fmt(circuitState.i1) + 'A';
+      document.getElementById('lbl-val-i2').textContent = fmt(circuitState.i2) + 'A';
+      document.getElementById('lbl-val-j').textContent = fmt(circuitState.iInTotal) + 'A';
+      document.getElementById('lbl-val-i3').textContent = fmt(circuitState.i3) + 'A';
+      document.getElementById('lbl-val-i4').textContent = fmt(circuitState.i4) + 'A';
+
+      const b4Visible = circuitState.fourBranches;
+      branchMeshes.I4.visible = b4Visible;
+      resMeshes.R4.visible = b4Visible;
+      arrowCones.I4.visible = b4Visible;
+      document.getElementById('label-i4').style.display = b4Visible ? 'block' : 'none';
+      document.getElementById('row-kcl-i4').style.display = b4Visible ? 'flex' : 'none';
+      document.getElementById('ctrl-group-r4').style.display = b4Visible ? 'block' : 'none';
+      document.getElementById('probe-btn-I4').style.display = b4Visible ? 'block' : 'none';
+
+      document.getElementById('kcl-i1').textContent = fmt(circuitState.i1) + ' A';
+      document.getElementById('kcl-i2').textContent = fmt(circuitState.i2) + ' A';
+      document.getElementById('kcl-in-total').textContent = fmt(circuitState.iInTotal) + ' A';
+
+      document.getElementById('kcl-i3').textContent = fmt(circuitState.i3) + ' A';
+      document.getElementById('kcl-i4').textContent = fmt(circuitState.i4) + ' A';
+      document.getElementById('kcl-out-total').textContent = fmt(circuitState.iOutTotal) + ' A';
+
+      const symEq = b4Visible ? 'I₁ + I₂ = I₃ + I₄' : 'I₁ + I₂ = I₃';
+      const numEq = b4Visible
+        ? `${fmt(circuitState.i1)}A + ${fmt(circuitState.i2)}A = ${fmt(circuitState.i3)}A + ${fmt(circuitState.i4)}A`
+        : `${fmt(circuitState.i1)}A + ${fmt(circuitState.i2)}A = ${fmt(circuitState.i3)}A`;
+
+      document.getElementById('kcl-symbolic-eq').textContent = symEq;
+      document.getElementById('kcl-numeric-eq').textContent = numEq;
+      document.getElementById('kcl-equality-readout').textContent =
+        `${fmt(circuitState.iInTotal)}A = ${fmt(circuitState.iOutTotal)}A`;
+
+      document.getElementById('learn-eq-line1').textContent = symEq;
+      document.getElementById('learn-eq-line2').textContent = numEq;
+
+      document.getElementById('val-v1').textContent = circuitState.v1.toFixed(1) + ' V';
+      document.getElementById('val-r1').textContent = circuitState.r1.toFixed(1) + ' Ω';
+      document.getElementById('ctrl-readout-i1').textContent = `I₁ = ${fmt(circuitState.i1)}A`;
+
+      document.getElementById('val-v2').textContent = circuitState.v2.toFixed(1) + ' V';
+      document.getElementById('val-r2').textContent = circuitState.r2.toFixed(1) + ' Ω';
+      document.getElementById('ctrl-readout-i2').textContent = `I₂ = ${fmt(circuitState.i2)}A`;
+
+      document.getElementById('val-r3').textContent = circuitState.r3.toFixed(1) + ' Ω';
+      document.getElementById('ctrl-readout-i3').textContent = `${fmt(circuitState.i3)}A`;
+
+      document.getElementById('val-r4').textContent = circuitState.r4.toFixed(1) + ' Ω';
+      document.getElementById('ctrl-readout-i4').textContent = `${fmt(circuitState.i4)}A`;
+
+      document.getElementById('val-speed').textContent = circuitState.simSpeed.toFixed(1) + 'x';
+
+      branchMeshes.I1.material.emissiveIntensity = circuitState.powerOn ? Math.min(0.9, 0.15 + circuitState.i1 * 0.15) : 0.05;
+      branchMeshes.I2.material.emissiveIntensity = circuitState.powerOn ? Math.min(0.9, 0.15 + circuitState.i2 * 0.15) : 0.05;
+      branchMeshes.I3.material.emissiveIntensity = circuitState.powerOn ? Math.min(0.9, 0.15 + circuitState.i3 * 0.15) : 0.05;
+      branchMeshes.I4.material.emissiveIntensity = circuitState.powerOn ? Math.min(0.9, 0.15 + circuitState.i4 * 0.15) : 0.05;
+
+      updateAmmeterReadout();
+    }
+
+    /********************************************************************
+     * 7. VIRTUAL AMMETER & EXPERIMENT CONTROLS
+     ********************************************************************/
+    function selectBranch(branchId) {
+      if (branchId === 'I4' && !circuitState.fourBranches) branchId = 'I3';
+      circuitState.selectedBranch = branchId;
+
+      ['I1', 'I2', 'J', 'I3', 'I4'].forEach(id => {
+        const btn = document.getElementById('probe-btn-' + id);
+        if (btn) {
+          btn.className = (id === branchId)
+            ? 'py-1.5 rounded-lg border border-amber-400 bg-amber-500/25 text-white font-bold transition'
+            : 'py-1.5 rounded-lg border border-slate-700 bg-slate-800/70 text-slate-300 hover:border-cyan-400 transition';
+        }
+      });
+
+      const labelMap = { I1: 'label-i1', I2: 'label-i2', J: 'label-j', I3: 'label-i3', I4: 'label-i4' };
+      Object.keys(labelMap).forEach(k => {
+        const el = document.getElementById(labelMap[k]);
+        if (el) el.classList.toggle('active-probe', k === branchId);
+      });
+
+      if (branchId === 'J') {
+        clampRing.position.set(0, wireY, 0);
+        clampRing.rotation.set(Math.PI / 2, 0, 0);
+      } else {
+        const curve = branchCurves[branchId];
+        const pt = curve.getPointAt(0.35);
+        const tangent = curve.getTangentAt(0.35).normalize();
+        clampRing.position.copy(pt);
+        clampRing.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), tangent);
+      }
+
+      updateAmmeterReadout();
+    }
+
+    function updateAmmeterReadout() {
+      const b = circuitState.selectedBranch;
+      const tagEl = document.getElementById('ammeter-branch-tag');
+      const detEl = document.getElementById('ammeter-detail');
+      const lcdEl = document.getElementById('ammeter-lcd');
+
+      if (!tagEl || !detEl || !lcdEl) return;
+
+      let val = 0;
+      if (b === 'I1') {
+        val = circuitState.i1;
+        tagEl.textContent = 'Branch I₁ (In)';
+        detEl.textContent = `V₁ = ${circuitState.v1.toFixed(1)}V | R₁ = ${circuitState.r1.toFixed(1)}Ω`;
+      } else if (b === 'I2') {
+        val = circuitState.i2;
+        tagEl.textContent = 'Branch I₂ (In)';
+        detEl.textContent = `V₂ = ${circuitState.v2.toFixed(1)}V | R₂ = ${circuitState.r2.toFixed(1)}Ω`;
+      } else if (b === 'J') {
+        val = circuitState.iInTotal;
+        tagEl.textContent = 'Junction Node J₁';
+        detEl.textContent = `ΣI(in) = ΣI(out)`;
+      } else if (b === 'I3') {
+        val = circuitState.i3;
+        tagEl.textContent = 'Branch I₃ (Out)';
+        detEl.textContent = `Load R₃ = ${circuitState.r3.toFixed(1)}Ω`;
+      } else if (b === 'I4') {
+        val = circuitState.i4;
+        tagEl.textContent = 'Branch I₄ (Out)';
+        detEl.textContent = `Load R₄ = ${circuitState.r4.toFixed(1)}Ω`;
+      }
+
+      lcdEl.textContent = val.toFixed(2) + ' A';
+    }
+
+    function togglePower() {
+      circuitState.powerOn = !circuitState.powerOn;
+      const btn = document.getElementById('btn-power');
+      const dot = document.getElementById('power-dot');
+      const lbl = document.getElementById('power-label');
+
+      if (circuitState.powerOn) {
+        btn.className = 'px-2.5 py-2 rounded-xl font-mono-tech text-xs font-bold flex items-center justify-center gap-1.5 bg-emerald-500/20 text-emerald-300 border border-emerald-400/50 shadow-sm transition';
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981]';
+        lbl.textContent = 'PWR: ON';
+      } else {
+        btn.className = 'px-2.5 py-2 rounded-xl font-mono-tech text-xs font-bold flex items-center justify-center gap-1.5 bg-rose-500/20 text-rose-300 border border-rose-400/50 shadow-sm transition';
+        dot.className = 'w-2 h-2 rounded-full bg-rose-400 shadow-[0_0_8px_#f43f5e]';
+        lbl.textContent = 'PWR: OFF';
+      }
+      refreshAllUI();
+    }
+
+    function toggleFourthBranch() {
+      circuitState.fourBranches = !circuitState.fourBranches;
+      const btn = document.getElementById('btn-toggle-b4');
+      btn.textContent = circuitState.fourBranches ? '4 Branches: ON' : '3 Branches: ON';
+      if (!circuitState.fourBranches && circuitState.selectedBranch === 'I4') {
+        selectBranch('I3');
+      }
+      refreshAllUI();
+    }
+
+    function resetExperiment() {
+      circuitState.v1 = 12;
+      circuitState.r1 = 6;
+      circuitState.v2 = 12;
+      circuitState.r2 = 12;
+      circuitState.r3 = 4;
+      circuitState.r4 = 8;
+      circuitState.simSpeed = 1.0;
+      circuitState.fourBranches = true;
+      if (!circuitState.powerOn) togglePower();
+
+      document.getElementById('slider-v1').value = 12;
+      document.getElementById('slider-r1').value = 6;
+      document.getElementById('slider-v2').value = 12;
+      document.getElementById('slider-r2').value = 12;
+      document.getElementById('slider-r3').value = 4;
+      document.getElementById('slider-r4').value = 8;
+      document.getElementById('slider-speed').value = 1.0;
+      document.getElementById('btn-toggle-b4').textContent = '4 Branches: ON';
+
+      resetCamera();
+      selectBranch('I1');
+      refreshAllUI();
+    }
+
+    /********************************************************************
+     * 8. GUIDED LEARNING MODE & CHALLENGE MODE + 3D LABEL PROJECTION
+     ********************************************************************/
+    let learnActive = false;
+    let learnStep = 1;
+
+    const learnStepsData = [
+      {
+        badge: 'STEP 1 OF 4',
+        title: 'The Central Junction (Node J₁)',
+        desc: '"This is a junction where multiple branches meet." Electric charge cannot accumulate or vanish at this node.',
+        camPos: new THREE.Vector3(0, 7.5, 8.5),
+        lookAt: new THREE.Vector3(0, 0.5, 0),
+        highlightIds: ['label-j']
+      },
+      {
+        badge: 'STEP 2 OF 4',
+        title: 'Incoming Currents (I₁ and I₂)',
+        desc: '"These currents are entering the junction." Driven by sources V₁ and V₂, charges flow toward Node J₁.',
+        camPos: new THREE.Vector3(-5.5, 9.5, 11.5),
+        lookAt: new THREE.Vector3(-3.0, 0.5, 0),
+        highlightIds: ['label-i1', 'label-i2']
+      },
+      {
+        badge: 'STEP 3 OF 4',
+        title: 'Outgoing Currents (I₃ and I₄)',
+        desc: '"These currents are leaving the junction." The combined current splits across the outgoing parallel branches.',
+        camPos: new THREE.Vector3(5.5, 9.5, 11.5),
+        lookAt: new THREE.Vector3(3.0, 0.5, 0),
+        highlightIds: ['label-i3', 'label-i4']
+      },
+      {
+        badge: 'STEP 4 OF 4',
+        title: "Kirchhoff's Current Law Verified",
+        desc: 'The total current entering the junction always equals the total current leaving the junction:',
+        camPos: defaultCamPos.clone(),
+        lookAt: defaultLookAt.clone(),
+        highlightIds: ['label-i1', 'label-i2', 'label-j', 'label-i3', 'label-i4']
+      }
+    ];
+
+    function toggleLearnMode() {
+      learnActive = !learnActive;
+      const overlay = document.getElementById('learn-overlay');
+      if (learnActive) {
+        learnStep = 1;
+        overlay.classList.remove('hidden');
+        applyLearnStep();
+      } else {
+        closeLearnMode();
+      }
+    }
+
+    function closeLearnMode() {
+      learnActive = false;
+      document.getElementById('learn-overlay').classList.add('hidden');
+      ['label-i1', 'label-i2', 'label-j', 'label-i3', 'label-i4'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('highlight-step');
+      });
+      resetCamera();
+    }
+
+    function changeLearnStep(delta) {
+      learnStep = Math.min(4, Math.max(1, learnStep + delta));
+      applyLearnStep();
+    }
+
+    function applyLearnStep() {
+      const s = learnStepsData[learnStep - 1];
+      document.getElementById('learn-step-badge').textContent = s.badge;
+      document.getElementById('learn-step-title').textContent = s.title;
+      document.getElementById('learn-step-desc').textContent = s.desc;
+
+      const eqBox = document.getElementById('learn-step-eq-box');
+      if (learnStep === 4) {
+        eqBox.classList.remove('hidden');
+      } else {
+        eqBox.classList.add('hidden');
+      }
+
+      for (let i = 1; i <= 4; i++) {
+        document.getElementById('dot-' + i).className = (i <= learnStep)
+          ? 'w-6 h-1.5 rounded-full bg-cyan-400'
+          : 'w-6 h-1.5 rounded-full bg-slate-700';
+      }
+
+      ['label-i1', 'label-i2', 'label-j', 'label-i3', 'label-i4'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle('highlight-step', s.highlightIds.includes(id));
+      });
+
+      camAnimTargetPos = s.camPos.clone();
+      camAnimLookAt = s.lookAt.clone();
+    }
+
+    const challengeQuestions = [
+      {
+        prompt: '5A enters a junction. 2A leaves through one branch. What current leaves through the second branch?',
+        answer: 3.0,
+        eq: '5A = 2A + 3A',
+        hint: 'Use ΣI(in) = ΣI(out). Subtract the known outgoing current (2A) from the incoming current (5A).',
+        simPreset: { v1: 15, r1: 5, v2: 10, r2: 5, r3: 6, r4: 4 }
+      },
+      {
+        prompt: 'Two branches feed a node with I₁ = 3.5A and I₂ = 1.5A. If all outgoing current flows into a single branch I₃, what is I₃?',
+        answer: 5.0,
+        eq: '3.5A + 1.5A = 5.0A',
+        hint: 'Add both incoming currents entering the junction: I₁ + I₂ = I₃.',
+        simPreset: { v1: 14, r1: 4, v2: 6, r2: 4, r3: 5, r4: 5 }
+      },
+      {
+        prompt: 'At Node J₁, I₁ = 4A and I₂ = 2A enter. Two branches leave the node with I₃ = 4.5A and I₄. Find I₄.',
+        answer: 1.5,
+        eq: '4A + 2A = 4.5A + 1.5A',
+        hint: 'Total incoming current is 4A + 2A = 6A. Therefore, I₄ = 6A - 4.5A.',
+        simPreset: { v1: 16, r1: 4, v2: 8, r2: 4, r3: 3, r4: 9 }
+      },
+      {
+        prompt: 'In our circuit, V₁ = 18V across R₁ = 6Ω and V₂ = 12V across R₂ = 6Ω enter a junction. If I₃ = 2A leaves, what is I₄?',
+        answer: 3.0,
+        eq: '(18V/6Ω) + (12V/6Ω) = 3A + 2A = 2A + 3A',
+        hint: 'First find I₁ = 18/6 = 3A and I₂ = 12/6 = 2A. Total incoming is 5A, so I₄ = 5A - 2A.',
+        simPreset: { v1: 18, r1: 6, v2: 12, r2: 6, r3: 6, r4: 4 }
+      }
+    ];
+
+    let currentChallengeIdx = 0;
+
+    function toggleChallengeModal() {
+      const modal = document.getElementById('challenge-modal');
+      modal.classList.toggle('hidden');
+      if (!modal.classList.contains('hidden')) {
+        renderChallengeQuestion();
+      }
+    }
+
+    function renderChallengeQuestion() {
+      const q = challengeQuestions[currentChallengeIdx];
+      document.getElementById('ch-q-num').textContent = currentChallengeIdx + 1;
+      document.getElementById('ch-prompt').textContent = q.prompt;
+      document.getElementById('ch-input').value = '';
+      document.getElementById('ch-feedback').classList.add('hidden');
+
+      const bar = document.getElementById('ch-progress-bar');
+      bar.innerHTML = '';
+      challengeQuestions.forEach((_, idx) => {
+        const pill = document.createElement('div');
+        pill.className = idx === currentChallengeIdx
+          ? 'h-1.5 flex-1 rounded-full bg-emerald-400'
+          : 'h-1.5 flex-1 rounded-full bg-slate-700';
+        bar.appendChild(pill);
+      });
+    }
+
+    function checkChallengeAnswer() {
+      const q = challengeQuestions[currentChallengeIdx];
+      const userVal = parseFloat(document.getElementById('ch-input').value);
+      const fb = document.getElementById('ch-feedback');
+      fb.classList.remove('hidden');
+
+      if (!isNaN(userVal) && Math.abs(userVal - q.answer) < 0.05) {
+        fb.className = 'rounded-xl p-3 text-xs space-y-1 bg-emerald-950/80 border border-emerald-400/50 text-emerald-200';
+        fb.innerHTML = `<div class="font-bold text-emerald-400 text-sm">✓ Correct!</div>
+                        <div class="font-mono-tech text-white">${q.eq}</div>`;
+      } else {
+        fb.className = 'rounded-xl p-3 text-xs space-y-1 bg-rose-950/80 border border-rose-400/50 text-rose-200';
+        fb.innerHTML = `<div class="font-bold text-rose-400 text-sm">✗ Try Again</div>
+                        <div>${q.hint}</div>`;
+      }
+    }
+
+    function nextChallenge() {
+      currentChallengeIdx = (currentChallengeIdx + 1) % challengeQuestions.length;
+      renderChallengeQuestion();
+    }
+
+    function prevChallenge() {
+      currentChallengeIdx = (currentChallengeIdx - 1 + challengeQuestions.length) % challengeQuestions.length;
+      renderChallengeQuestion();
+    }
+
+    function loadChallengeInto3D() {
+      const p = challengeQuestions[currentChallengeIdx].simPreset;
+      document.getElementById('slider-v1').value = p.v1;
+      document.getElementById('slider-r1').value = p.r1;
+      document.getElementById('slider-v2').value = p.v2;
+      document.getElementById('slider-r2').value = p.r2;
+      document.getElementById('slider-r3').value = p.r3;
+      document.getElementById('slider-r4').value = p.r4;
+      updateCircuitFromUI();
+      toggleChallengeModal();
+    }
+
+    const labelAnchors = {
+      'label-i1': new THREE.Vector3(-3.0, 1.35, -3.4),
+      'label-i2': new THREE.Vector3(-3.0, 1.35, 3.4),
+      'label-j': new THREE.Vector3(0, 1.65, 0),
+      'label-i3': new THREE.Vector3(3.0, 1.35, -3.4),
+      'label-i4': new THREE.Vector3(3.0, 1.35, 3.4)
+    };
+
+    function updateFloatingLabels() {
+      const halfW = window.innerWidth / 2;
+      const halfH = window.innerHeight / 2;
+
+      Object.keys(labelAnchors).forEach(id => {
+        const el = document.getElementById(id);
+        if (!el || (id === 'label-i4' && !circuitState.fourBranches)) return;
+        const pos = labelAnchors[id].clone().project(camera);
+        if (pos.z > 1) {
+          el.style.opacity = '0';
+          return;
+        }
+        el.style.opacity = '1';
+        el.style.left = `${pos.x * halfW + halfW}px`;
+        el.style.top = `${-pos.y * halfH + halfH}px`;
+      });
+    }
+
+    /********************************************************************
+     * 9. RESPONSIVE PANEL TOGGLE HANDLERS
+     ********************************************************************/
+    let leftPanelOpen = true;
+    let rightPanelOpen = true;
+
+    function updateFullViewButtonState() {
+      const lbl = document.getElementById('lbl-toggle-all-panels');
+      if (!lbl) return;
+      if (!leftPanelOpen && !rightPanelOpen) {
+        lbl.textContent = 'Show Panels';
+      } else {
+        lbl.textContent = 'Full 3D View';
+      }
+    }
+
+    function toggleLeftPanel(forceState) {
+      leftPanelOpen = typeof forceState === 'boolean' ? forceState : !leftPanelOpen;
+      const pLeft = document.getElementById('panel-left');
+      const btnOpenLeft = document.getElementById('btn-open-left');
+
+      if (leftPanelOpen) {
+        pLeft.classList.remove('hidden');
+        btnOpenLeft.classList.add('hidden');
+        btnOpenLeft.classList.remove('flex');
+      } else {
+        pLeft.classList.add('hidden');
+        btnOpenLeft.classList.remove('hidden');
+        btnOpenLeft.classList.add('flex');
+      }
+      updateFullViewButtonState();
+    }
+
+    function toggleRightPanel(forceState) {
+      rightPanelOpen = typeof forceState === 'boolean' ? forceState : !rightPanelOpen;
+      const pRight = document.getElementById('panel-right');
+      const btnOpenRight = document.getElementById('btn-open-right');
+
+      if (rightPanelOpen) {
+        pRight.classList.remove('hidden', 'lg:hidden');
+        pRight.classList.add('flex');
+        btnOpenRight.classList.add('hidden');
+        btnOpenRight.classList.remove('flex');
+      } else {
+        pRight.classList.add('hidden', 'lg:hidden');
+        pRight.classList.remove('flex', 'lg:flex');
+        btnOpenRight.classList.remove('hidden');
+        btnOpenRight.classList.add('flex');
+      }
+      updateFullViewButtonState();
+    }
+
+    function toggleAllPanels() {
+      const shouldCloseBoth = leftPanelOpen || rightPanelOpen;
+      toggleLeftPanel(!shouldCloseBoth);
+      toggleRightPanel(!shouldCloseBoth);
+    }
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+
+      if (window.innerWidth >= 1024) {
+        toggleLeftPanel(leftPanelOpen);
+        toggleRightPanel(rightPanelOpen);
+      }
+    });
+
+    /********************************************************************
+     * 10. MAIN 60FPS ANIMATION LOOP
+     ********************************************************************/
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = Math.min(clock.getDelta(), 0.1);
+      const elapsed = clock.getElapsedTime();
+
+      if (camAnimTargetPos && camAnimLookAt) {
+        camera.position.lerp(camAnimTargetPos, 0.08);
+        controls.target.lerp(camAnimLookAt, 0.08);
+        if (camera.position.distanceTo(camAnimTargetPos) < 0.08) {
+          camAnimTargetPos = null;
+          camAnimLookAt = null;
+        }
+      }
+
+      controls.update();
+
+      const pulseScale = circuitState.powerOn
+        ? 1 + Math.sin(elapsed * 4.5) * 0.08 * Math.min(2, circuitState.iInTotal * 0.4)
+        : 1;
+      junctionCore.scale.setScalar(pulseScale);
+      junctionHalo.rotation.z = elapsed * 0.8;
+      junctionHalo.scale.setScalar(1 + Math.sin(elapsed * 3) * 0.06);
+
+      clampRing.rotation.z = elapsed * 1.2;
+
+      updateParticles(dt);
+
+      renderer.render(scene, camera);
+      updateFloatingLabels();
+    }
+
+    window.onload = function () {
+      selectBranch('I1');
+      refreshAllUI();
+      animate();
+    };
+  </script>
+</body>
+</html>

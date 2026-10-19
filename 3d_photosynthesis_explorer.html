@@ -1,0 +1,2309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Photosynthesis Explorer - Interactive Science Lab</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Fredoka for playful 3D movie look, Nunito for clean body text -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+    <!-- Three.js r128 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- OrbitControls -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Nunito', sans-serif;
+            user-select: none;
+            background: #87CEEB;
+        }
+        h1, h2, h3, .font-display {
+            font-family: 'Fredoka', sans-serif;
+        }
+        #canvas-container {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        /* Playful 3D Game Card & Button Styling */
+        .game-panel {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(10px);
+            border: 3px solid #ffffff;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 6px 0 #cbd5e1;
+        }
+        .btn-3d {
+            transition: all 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            top: 0;
+        }
+        .btn-3d:active {
+            top: 4px;
+            box-shadow: 0 2px 0 var(--shadow-color, #15803d) !important;
+        }
+        .btn-yellow {
+            background: linear-gradient(180deg, #fde047 0%, #eab308 100%);
+            box-shadow: 0 5px 0 #a16207, 0 8px 15px rgba(0,0,0,0.2);
+            --shadow-color: #a16207;
+        }
+        .btn-blue {
+            background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+            box-shadow: 0 5px 0 #0369a1, 0 8px 15px rgba(0,0,0,0.2);
+            --shadow-color: #0369a1;
+        }
+        .btn-green {
+            background: linear-gradient(180deg, #4ade80 0%, #16a34a 100%);
+            box-shadow: 0 5px 0 #15803d, 0 8px 15px rgba(0,0,0,0.2);
+            --shadow-color: #15803d;
+        }
+        .btn-purple {
+            background: linear-gradient(180deg, #c084fc 0%, #9333ea 100%);
+            box-shadow: 0 5px 0 #6b21a8, 0 8px 15px rgba(0,0,0,0.2);
+            --shadow-color: #6b21a8;
+        }
+
+        /* 3D Floating HTML Labels synced with Three.js */
+        .label-3d {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            pointer-events: auto;
+            cursor: pointer;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s;
+            z-index: 15;
+            white-space: nowrap;
+        }
+        .label-3d:hover {
+            transform: translate(-50%, -50%) scale(1.14);
+            z-index: 30;
+        }
+        .badge-pill {
+            padding: 5px 12px;
+            border-radius: 9999px;
+            font-family: 'Fredoka', sans-serif;
+            font-weight: 700;
+            font-size: 0.82rem;
+            letter-spacing: 0.02em;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: 2.5px solid #fff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.28);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.35);
+        }
+
+        /* Custom Range Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 12px;
+            cursor: pointer;
+            border-radius: 999px;
+            border: 2px solid #e2e8f0;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #ffffff;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -8px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+            border: 4px solid currentColor;
+            transition: transform 0.15s ease;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.18);
+        }
+
+        @keyframes floatSlow {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+        }
+        .animate-float {
+            animation: floatSlow 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="relative w-screen h-screen overflow-hidden select-none">
+
+    <!-- Three.js 3D Viewport -->
+    <div id="canvas-container"></div>
+
+    <!-- Floating 3D Interactive Labels Container -->
+    <div id="labels-container" class="absolute inset-0 pointer-events-none overflow-hidden z-10"></div>
+
+    <!-- TOP BAR: Title, Happiness & Photosynthesis Meter, Mode Buttons -->
+    <header class="absolute top-3 left-3 right-3 z-20 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
+        <!-- App Logo & Title -->
+        <div class="game-panel px-4 py-2.5 rounded-3xl flex items-center gap-3 pointer-events-auto">
+            <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center text-white text-2xl shadow-md border-2 border-white">
+                🌱
+            </div>
+            <div>
+                <h1 class="text-lg md:text-xl font-bold text-slate-800 leading-tight flex items-center gap-2">
+                    Photosynthesis 3D Lab
+                    <span class="text-xs bg-amber-100 text-amber-800 border border-amber-300 px-2 py-0.5 rounded-full font-bold">Interactive</span>
+                </h1>
+                <p class="text-xs text-slate-500 font-bold hidden sm:block">Drag to rotate • Scroll to zoom • Click 3D badges to learn!</p>
+            </div>
+        </div>
+
+        <!-- Center Chemical Equation & Plant Happiness Meter -->
+        <div class="game-panel px-4 py-2 rounded-3xl flex flex-wrap items-center gap-3 md:gap-5 pointer-events-auto">
+            <!-- Plant Mood Avatar -->
+            <div class="flex items-center gap-2.5">
+                <div id="plant-mood-emoji" class="text-3xl animate-float">😄</div>
+                <div>
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-xs font-extrabold uppercase tracking-wider text-slate-500">Photosynthesis Rate</span>
+                        <span id="rate-percent" class="text-sm font-display font-bold text-emerald-600">85%</span>
+                    </div>
+                    <div class="w-32 md:w-40 h-3.5 bg-slate-200 rounded-full overflow-hidden border border-slate-300 p-0.5">
+                        <div id="rate-bar" class="h-full bg-gradient-to-r from-lime-400 via-emerald-500 to-teal-500 rounded-full transition-all duration-300" style="width: 85%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Output Counters -->
+            <div class="hidden lg:flex items-center gap-2 text-xs font-bold bg-slate-100 px-3 py-1.5 rounded-2xl border border-slate-200">
+                <span class="px-2 py-0.5 rounded-lg bg-cyan-100 text-cyan-800 border border-cyan-300" title="Live Oxygen Output">🫧 O₂: <b id="o2-rate">52</b>/m</span>
+                <span class="px-2 py-0.5 rounded-lg bg-amber-100 text-amber-800 border border-amber-300" title="Live Glucose Sugar Output">🍬 Sugar: <b id="glucose-rate">44</b>/m</span>
+                <span id="status-badge" class="px-2 py-0.5 rounded-full text-[11px] bg-emerald-100 text-emerald-700">Thriving! 🌟</span>
+            </div>
+        </div>
+
+        <!-- Quick Action & Camera Buttons -->
+        <div class="flex items-center gap-2 pointer-events-auto">
+            <button id="btn-ai-lab" onclick="toggleAiPanel()" class="btn-3d btn-green text-white font-display font-bold px-3.5 py-2.5 rounded-2xl text-sm flex items-center gap-2 border-2 border-white">
+                <span>✨</span>
+                <span>Ask Sprout AI</span>
+            </button>
+            <button id="btn-magnifier" onclick="toggleChloroplastZoom()" class="btn-3d btn-purple text-white font-display font-bold px-3.5 py-2.5 rounded-2xl text-sm flex items-center gap-2 border-2 border-white">
+                <i class="fas fa-magnifying-glass-plus"></i>
+                <span class="hidden md:inline">Zoom Inside Leaf</span>
+            </button>
+            <button id="btn-challenge" onclick="toggleChallengeModal()" class="btn-3d btn-yellow text-slate-900 font-display font-bold px-3.5 py-2.5 rounded-2xl text-sm flex items-center gap-2 border-2 border-white">
+                <i class="fas fa-trophy text-amber-700"></i>
+                <span class="hidden sm:inline">Challenge & Quiz</span>
+            </button>
+            <button id="btn-sound" onclick="toggleSound()" class="game-panel w-10 h-10 rounded-2xl flex items-center justify-center text-slate-700 hover:text-emerald-600 transition" title="Toggle Sound Effects">
+                <i id="sound-icon" class="fas fa-volume-up text-lg"></i>
+            </button>
+        </div>
+    </header>
+
+    <!--Streams/Markers for Left Panel Update-->
+    <!-- LEFT PANEL: Collapsible Educational Info Card & Floating Toggle Pill -->
+    <div id="info-collapsed-tab" class="hidden absolute left-3 top-20 z-20 pointer-events-auto">
+        <button onclick="toggleLeftInfoCard(true)" class="game-panel px-3.5 py-2 rounded-2xl flex items-center gap-2 text-xs font-display font-bold text-slate-800 hover:scale-105 transition shadow-lg border-2 border-emerald-400">
+            <span id="collapsed-info-icon" class="text-base">☀️</span>
+            <span id="collapsed-info-title">Show Lesson Card</span>
+            <i class="fas fa-chevron-right text-emerald-600"></i>
+        </button>
+    </div>
+
+    <aside id="left-sidebar" class="absolute left-3 top-20 z-20 flex flex-col pointer-events-none w-64 sm:w-72 transition-all duration-300">
+        <!-- Dynamic Pop-up Educational Card -->
+        <div id="info-card" class="game-panel p-3 rounded-3xl pointer-events-auto transition-all duration-300 bg-white/85">
+            <div class="flex items-start justify-between gap-1 mb-1.5">
+                <div class="flex items-center gap-2">
+                    <span id="info-icon" class="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-lg shadow-inner font-bold shrink-0">☀️</span>
+                    <div>
+                        <span id="info-tag" class="text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 block w-fit">Click any 3D badge</span>
+                        <h2 id="info-title" class="text-sm font-bold text-slate-800 leading-tight">How Plants Make Food!</h2>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1 shrink-0">
+                    <button onclick="resetCameraView()" class="text-[11px] font-bold text-sky-600 hover:text-sky-800 bg-sky-50 px-2 py-1 rounded-xl border border-sky-200" title="Reset 3D Camera">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <button onclick="toggleLeftInfoCard(false)" class="text-[11px] font-bold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded-xl border border-slate-200" title="Minimize Card to see full 3D view">
+                        <i class="fas fa-chevron-left"></i> Hide
+                    </button>
+                </div>
+            </div>
+            <p id="info-desc" class="text-xs text-slate-600 font-semibold leading-snug mb-2">
+                Plants take in <b>Sunlight</b>, <b>Water</b>, and <b>CO₂</b> to cook up sweet <b>Glucose (Sugar)</b> and release fresh <b>Oxygen</b>!
+            </p>
+            <div id="info-fact" class="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-2 text-[11px] text-emerald-900 font-bold flex items-start gap-1.5 mb-2">
+                <span class="text-sm">💡</span>
+                <span id="info-fact-text">Click any floating 3D badge or click <b>Hide</b> above for a full-screen 3D view!</span>
+            </div>
+            <!-- Gemini AI Deep-Dive & TTS Narration Controls -->
+            <div class="flex items-center gap-1.5 pt-1 border-t border-slate-200/80">
+                <button id="btn-ai-story" onclick="generateAiDeepDive()" class="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-display font-bold text-[11px] py-1.5 px-2.5 rounded-xl shadow flex items-center justify-center gap-1 transition">
+                    <span>✨</span> <span id="ai-story-btn-text">AI Fun Story</span>
+                </button>
+                <button id="btn-tts-speak" onclick="speakCurrentCardWithGemini()" class="bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 font-display font-bold text-[11px] py-1.5 px-2.5 rounded-xl flex items-center justify-center gap-1 transition" title="Listen with Gemini Voice!">
+                    <i id="tts-icon" class="fas fa-volume-high text-amber-600"></i> <span id="tts-btn-text">Listen</span>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ACTIVE CHALLENGE BANNER (Right Side when Challenge Mode is active) -->
+    <div id="challenge-hud" class="hidden absolute right-3 top-24 z-20 w-72 md:w-80 game-panel p-4 rounded-3xl border-4 border-amber-400 pointer-events-auto">
+        <div class="flex items-center justify-between mb-2">
+            <span class="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 font-display font-bold text-xs flex items-center gap-1">
+                <i class="fas fa-star text-amber-500"></i> CHALLENGE MISSION
+            </span>
+            <button onclick="closeChallengeHud()" class="text-slate-400 hover:text-slate-600 text-sm"><i class="fas fa-times"></i></button>
+        </div>
+        <h3 id="mission-title" class="font-display font-bold text-slate-800 text-base mb-1">Mission 1: Morning Wake-Up!</h3>
+        <p id="mission-desc" class="text-xs text-slate-600 font-semibold mb-3">
+            Adjust Sunlight, Water, and CO₂ sliders so the plant reaches at least <b>90% Photosynthesis Rate</b>!
+        </p>
+        <div class="bg-slate-100 rounded-2xl p-2.5 mb-3 text-xs font-bold text-slate-700 space-y-1" id="mission-targets">
+            <!-- Dynamically populated -->
+        </div>
+        <div class="flex items-center justify-between gap-2">
+            <button onclick="nextMission()" class="btn-3d btn-green text-white font-display font-bold px-3 py-1.5 rounded-xl text-xs w-full">
+                Next Mission <i class="fas fa-arrow-right ml-1"></i>
+            </button>
+            <button onclick="openQuizModal()" class="btn-3d btn-blue text-white font-display font-bold px-3 py-1.5 rounded-xl text-xs w-full">
+                Take Mini-Quiz 🧠
+            </button>
+        </div>
+    </div>
+
+    <!-- SPROUT AI PLANT BUDDY & "WHAT-IF" SCENARIO LAB DRAWER (Right Side) -->
+    <div id="ai-companion-panel" class="hidden absolute right-3 top-24 bottom-28 z-30 w-80 md:w-96 game-panel p-4 rounded-3xl border-4 border-emerald-400 pointer-events-auto flex flex-col justify-between overflow-hidden">
+        <!-- Header -->
+        <div class="flex items-center justify-between pb-2.5 border-b border-slate-200">
+            <div class="flex items-center gap-2.5">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-400 to-green-600 flex items-center justify-center text-2xl shadow border-2 border-white">
+                    🌿
+                </div>
+                <div>
+                    <div class="flex items-center gap-1.5">
+                        <h3 class="font-display font-bold text-slate-800 text-sm leading-none">Sunny Sprout AI</h3>
+                        <span class="text-[10px] bg-emerald-100 text-emerald-800 font-extrabold px-2 py-0.5 rounded-full border border-emerald-300">Gemini Powered</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 font-bold mt-0.5">Talk to the 3D Plant or run What-If experiments!</p>
+                </div>
+            </div>
+            <button onclick="toggleAiPanel()" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center text-xs font-bold">✕</button>
+        </div>
+
+        <!-- Mode Tabs: Chat vs What-If Simulator -->
+        <div class="grid grid-cols-2 gap-1.5 bg-slate-100 p-1 rounded-2xl my-2.5 text-xs font-display font-bold">
+            <button id="tab-chat-btn" onclick="switchAiTab('chat')" class="py-1.5 rounded-xl bg-white text-emerald-700 shadow-sm transition">
+                💬 Chat with Plant
+            </button>
+            <button id="tab-whatif-btn" onclick="switchAiTab('whatif')" class="py-1.5 rounded-xl text-slate-600 hover:text-slate-800 transition">
+                🧪 "What-If" Lab
+            </button>
+        </div>
+
+        <!-- TAB 1: CHAT WITH SUNNY SPROUT -->
+        <div id="ai-tab-chat" class="flex-1 flex flex-col min-h-0">
+            <div id="ai-chat-history" class="flex-1 overflow-y-auto space-y-2.5 pr-1 text-xs font-semibold">
+                <div class="bg-emerald-50 border border-emerald-200 text-emerald-950 p-3 rounded-2xl rounded-tl-sm">
+                    <div class="font-display font-bold text-emerald-700 mb-0.5 flex items-center justify-between">
+                        <span>🌱 Sunny Sprout</span>
+                        <button onclick="speakTextWithGemini('Hi friend! I am Sunny Sprout! Change my Sunlight, Water, or CO2 sliders below and ask me how I feel, or ask me anything about how I make sugar and oxygen!')" class="text-[10px] bg-emerald-200/70 hover:bg-emerald-300 text-emerald-900 px-2 py-0.5 rounded-full">🔊 Listen</button>
+                    </div>
+                    Hi friend! I'm <b>Sunny Sprout</b>! 🌞 Change my Sunlight, Water, or CO₂ sliders below and click <b>"How do you feel?"</b>, or ask me any science question!
+                </div>
+            </div>
+
+            <!-- Quick Prompt Chips -->
+            <div class="flex flex-wrap gap-1.5 my-2">
+                <button onclick="askSproutPreset('How are you feeling right now with the current sliders?')" class="text-[11px] font-bold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 px-2.5 py-1 rounded-full transition">
+                    🩺 How do you feel right now?
+                </button>
+                <button onclick="askSproutPreset('Why are your leaves green instead of blue or purple?')" class="text-[11px] font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-1 rounded-full transition">
+                    🍃 Why are leaves green?
+                </button>
+                <button onclick="askSproutPreset('How do your roots drink water against gravity?')" class="text-[11px] font-bold bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-300 px-2.5 py-1 rounded-full transition">
+                    💧 How do roots drink?
+                </button>
+            </div>
+
+            <!-- Input Box -->
+            <form onsubmit="handleChatSubmit(event)" class="flex items-center gap-1.5 mt-1">
+                <input id="ai-chat-input" type="text" placeholder="Ask Sunny Sprout anything..." class="flex-1 bg-slate-100 border-2 border-slate-200 focus:border-emerald-400 focus:bg-white rounded-2xl px-3 py-2 text-xs font-bold text-slate-800 outline-none" />
+                <button id="ai-chat-send" type="submit" class="btn-3d btn-green text-white font-display font-bold px-3.5 py-2 rounded-2xl text-xs">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+        </div>
+
+        <!-- TAB 2: AI "WHAT-IF" ENVIRONMENT SIMULATOR -->
+        <div id="ai-tab-whatif" class="hidden flex-1 flex flex-col justify-between min-h-0 overflow-y-auto pr-1">
+            <div>
+                <p class="text-xs text-slate-600 font-bold mb-2 leading-relaxed">
+                    Type any wild scenario (like <i>"Inside a Martian greenhouse"</i> or <i>"Volcanic ash cloud"</i>) and Gemini AI will automatically adjust your 3D sliders and explain what happens to the plant!
+                </p>
+                <div class="grid grid-cols-2 gap-1.5 mb-3">
+                    <button onclick="runWhatIfScenario('Scorching Sahara Desert at Noon')" class="text-left p-2 rounded-2xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-[11px] font-bold text-amber-900 transition">
+                        🏜️ <b>Sahara Desert</b><br><span class="text-[10px] opacity-75">Max sun, bone-dry soil</span>
+                    </button>
+                    <button onclick="runWhatIfScenario('Martian Space Colony Biodome')" class="text-left p-2 rounded-2xl bg-purple-50 hover:bg-purple-100 border border-purple-200 text-[11px] font-bold text-purple-900 transition">
+                        🚀 <b>Mars Colony</b><br><span class="text-[10px] opacity-75">High CO₂, weak sun</span>
+                    </button>
+                    <button onclick="runWhatIfScenario('Deep Amazon Rainforest Floor')" class="text-left p-2 rounded-2xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-[11px] font-bold text-emerald-900 transition">
+                        🌴 <b>Jungle Floor</b><br><span class="text-[10px] opacity-75">Shady canopy, lots of rain</span>
+                    </button>
+                    <button onclick="runWhatIfScenario('Prehistoric Dinosaur Era Jungle')" class="text-left p-2 rounded-2xl bg-sky-50 hover:bg-sky-100 border border-sky-200 text-[11px] font-bold text-sky-900 transition">
+                        🦕 <b>Dino Era</b><br><span class="text-[10px] opacity-75">Supercharged CO₂ & sun</span>
+                    </button>
+                </div>
+
+                <!-- Result Display Card -->
+                <div id="whatif-result-card" class="bg-slate-50 border-2 border-slate-200 rounded-2xl p-3 text-xs font-semibold text-slate-700">
+                    <div class="text-slate-400 font-bold text-center py-4">
+                        ✨ Pick a preset above or type your own "What-If" experiment below!
+                    </div>
+                </div>
+            </div>
+
+            <!-- Custom What-If Input -->
+            <form onsubmit="handleWhatIfSubmit(event)" class="flex items-center gap-1.5 mt-2 pt-2 border-t border-slate-200">
+                <input id="whatif-input" type="text" placeholder="e.g., Underneath an icy frozen lake..." class="flex-1 bg-slate-100 border-2 border-slate-200 focus:border-purple-400 focus:bg-white rounded-2xl px-3 py-2 text-xs font-bold text-slate-800 outline-none" />
+                <button id="whatif-send" type="submit" class="btn-3d btn-purple text-white font-display font-bold px-3 py-2 rounded-2xl text-xs shrink-0">
+                    Simulate ✨
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- BOTTOM CONTROL DOCK: Interactive Sliders & Water the Plant Button -->
+    <footer class="absolute bottom-3 left-3 right-3 z-20 flex justify-center pointer-events-none">
+        <div class="game-panel px-4 py-3 rounded-3xl pointer-events-auto w-full max-w-4xl flex flex-col md:flex-row items-center gap-3 md:gap-5">
+            
+            <!-- 1. Sunlight Intensity Slider -->
+            <div class="w-full md:w-1/3 bg-amber-50/80 border-2 border-amber-200 rounded-2xl px-3.5 py-2">
+                <div class="flex justify-between items-center mb-1">
+                    <label for="slider-sun" class="text-xs font-display font-bold text-amber-900 flex items-center gap-1.5">
+                        <span class="text-base">☀️</span> LIGHT (Energy)
+                    </label>
+                    <span id="val-sun" class="text-xs font-extrabold text-amber-700 bg-amber-200/70 px-2 py-0.5 rounded-full">85%</span>
+                </div>
+                <input id="slider-sun" type="range" min="0" max="100" value="85" 
+                    class="text-amber-500" style="background: linear-gradient(to right, #fde047, #f59e0b); border-radius: 999px;"
+                    oninput="updateEnvironmentControls()">
+            </div>
+
+            <!-- 2. Water Level Slider + "Water the Plant!" Boost Button -->
+            <div class="w-full md:w-1/3 bg-sky-50/80 border-2 border-sky-200 rounded-2xl px-3.5 py-2 flex items-center gap-2.5">
+                <div class="flex-1">
+                    <div class="flex justify-between items-center mb-1">
+                        <label for="slider-water" class="text-xs font-display font-bold text-sky-900 flex items-center gap-1.5">
+                            <span class="text-base">💧</span> WATER (H₂O)
+                        </label>
+                        <span id="val-water" class="text-xs font-extrabold text-sky-700 bg-sky-200/70 px-2 py-0.5 rounded-full">80%</span>
+                    </div>
+                    <input id="slider-water" type="range" min="0" max="100" value="80" 
+                        class="text-sky-500" style="background: linear-gradient(to right, #bae6fd, #0284c7); border-radius: 999px;"
+                        oninput="updateEnvironmentControls()">
+                </div>
+                <button onclick="waterThePlantBurst()" class="btn-3d btn-blue text-white font-display font-bold px-3 py-2 rounded-xl text-xs flex flex-col items-center justify-center shrink-0 border-2 border-white" title="Pour fresh water into the soil!">
+                    <span class="text-base leading-none">🚿</span>
+                    <span class="text-[10px] mt-0.5">Pour H₂O</span>
+                </button>
+            </div>
+
+            <!-- 3. Carbon Dioxide (CO2) Level Slider -->
+            <div class="w-full md:w-1/3 bg-slate-100/90 border-2 border-slate-300 rounded-2xl px-3.5 py-2">
+                <div class="flex justify-between items-center mb-1">
+                    <label for="slider-co2" class="text-xs font-display font-bold text-slate-800 flex items-center gap-1.5">
+                        <span class="text-base">🫧</span> CARBON DIOXIDE (CO₂)
+                    </label>
+                    <span id="val-co2" class="text-xs font-extrabold text-slate-700 bg-slate-200 px-2 py-0.5 rounded-full">75%</span>
+                </div>
+                <input id="slider-co2" type="range" min="0" max="100" value="75" 
+                    class="text-slate-600" style="background: linear-gradient(to right, #cbd5e1, #475569); border-radius: 999px;"
+                    oninput="updateEnvironmentControls()">
+            </div>
+
+        </div>
+    </footer>
+
+    <!-- CHLOROPLAST CELLULAR ZOOM OVERLAY BADGE (Bottom-Right when zoomed in) -->
+    <div id="chloroplast-overlay" class="hidden absolute right-4 bottom-28 z-20 w-80 game-panel p-4 rounded-3xl border-4 border-emerald-400 pointer-events-auto">
+        <div class="flex items-center justify-between mb-2">
+            <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-display font-bold text-xs">
+                🔬 INSIDE THE CHLOROPLAST
+            </span>
+            <button onclick="toggleChloroplastZoom()" class="text-xs font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-lg border border-rose-200">
+                Exit Zoom ✕
+            </button>
+        </div>
+        <h3 class="font-display font-bold text-slate-800 text-sm mb-1">The Green Solar Food Factory!</h3>
+        <p class="text-xs text-slate-600 font-semibold leading-relaxed mb-2">
+            Inside the magnifying glass, you can see <b>Grana</b> (stacks of green coin-like <b>Thylakoids</b> filled with <b>Chlorophyll</b>).
+        </p>
+        <div class="grid grid-cols-2 gap-1.5 text-[11px] font-bold">
+            <div class="bg-amber-50 p-2 rounded-xl border border-amber-200 text-amber-900">
+                ⚡ <b>Step 1:</b> Chlorophyll traps golden Sunlight & splits H₂O into O₂!
+            </div>
+            <div class="bg-emerald-50 p-2 rounded-xl border border-emerald-200 text-emerald-900">
+                🍬 <b>Step 2:</b> Calvin Cycle mixes CO₂ + Hydrogen to make Glucose!
+            </div>
+        </div>
+    </div>
+
+    <!-- MINI-QUIZ MODAL -->
+    <div id="quiz-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="game-panel max-w-md w-full p-6 rounded-3xl border-4 border-white relative">
+            <button onclick="closeQuizModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-200 text-slate-600 font-bold flex items-center justify-center hover:bg-slate-300">✕</button>
+            <div class="flex items-center gap-2 text-amber-600 font-display font-bold text-sm mb-1 pr-8">
+                <span>🧠 PHOTOSYNTHESIS DETECTIVE QUIZ</span>
+                <span id="quiz-progress" class="ml-auto bg-amber-100 px-2.5 py-0.5 rounded-full text-xs">Q 1/4</span>
+            </div>
+            <h3 id="quiz-question" class="text-lg font-display font-bold text-slate-800 mb-4">
+                What green pigment inside the chloroplast captures sunlight energy?
+            </h3>
+            <div id="quiz-options" class="space-y-2.5 mb-4">
+                <!-- Populated by JS -->
+            </div>
+            <div id="quiz-feedback" class="hidden p-3 rounded-2xl text-xs font-bold mb-3"></div>
+            <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-200/80">
+                <button id="quiz-ai-gen-btn" onclick="generateAiQuizQuestions()" class="btn-3d btn-purple text-white font-display font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5">
+                    <span>✨</span> <span id="quiz-ai-btn-label">Generate New AI Questions</span>
+                </button>
+                <button id="quiz-next-btn" onclick="nextQuizQuestion()" class="hidden btn-3d btn-green text-white font-display font-bold px-4 py-2 rounded-xl text-xs">
+                    Next <i class="fas fa-arrow-right ml-1"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /********************************************************************
+         * 0. GEMINI API INTEGRATION (TEXT, STRUCTURED JSON & TTS VOICE)
+         ********************************************************************/
+        const apiKey = ""; // Provided automatically by the runtime environment
+        let currentHotspotId = "sun";
+        let activeTtsAudio = null;
+
+        // Exponential backoff wrapper for Gemini API requests
+        async function fetchWithRetry(url, payload, maxRetries = 5) {
+            let delay = 1000;
+            for (let attempt = 0; attempt < maxRetries; attempt++) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (response.ok) {
+                        return await response.json();
+                    }
+                } catch (err) {
+                    // Retry silently on network errors
+                }
+                await new Promise(r => setTimeout(r, delay));
+                delay *= 2;
+            }
+            throw new Error("Unable to reach Gemini API after retries.");
+        }
+
+        // Call gemini-3-flash-preview for text or structured JSON
+        async function callGeminiText(userPrompt, systemPrompt, responseSchema = null) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+            const payload = {
+                contents: [{ parts: [{ text: userPrompt }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] }
+            };
+            if (responseSchema) {
+                payload.generationConfig = {
+                    responseMimeType: "application/json",
+                    responseSchema: responseSchema
+                };
+            }
+            const result = await fetchWithRetry(url, payload);
+            const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!text) throw new Error("Empty Gemini response");
+            return responseSchema ? JSON.parse(text) : text;
+        }
+
+        // Convert Base64 string to ArrayBuffer for PCM16 -> WAV conversion
+        function base64ToArrayBuffer(base64) {
+            const binaryString = window.atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        // Convert signed 16-bit PCM data from Gemini TTS into a playable WAV Blob
+        function pcmToWav(pcm16, sampleRate = 24000) {
+            const numChannels = 1;
+            const bitsPerSample = 16;
+            const byteRate = sampleRate * numChannels * (bitsPerSample / 8);
+            const blockAlign = numChannels * (bitsPerSample / 8);
+            const dataSize = pcm16.length * 2;
+            const buffer = new ArrayBuffer(44 + dataSize);
+            const view = new DataView(buffer);
+
+            const writeStr = (offset, str) => {
+                for (let i = 0; i < str.length; i++) {
+                    view.setUint8(offset + i, str.charCodeAt(i));
+                }
+            };
+
+            writeStr(0, 'RIFF');
+            view.setUint32(4, 36 + dataSize, true);
+            writeStr(8, 'WAVE');
+            writeStr(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true); // PCM format
+            view.setUint16(22, numChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, byteRate, true);
+            view.setUint16(32, blockAlign, true);
+            view.setUint16(34, bitsPerSample, true);
+            writeStr(36, 'data');
+            view.setUint32(40, dataSize, true);
+
+            let offset = 44;
+            for (let i = 0; i < pcm16.length; i++, offset += 2) {
+                view.setInt16(offset, pcm16[i], true);
+            }
+            return new Blob([buffer], { type: 'audio/wav' });
+        }
+
+        // Call gemini-2.5-flash-preview-tts to speak aloud with a cheerful animated character voice
+        async function speakTextWithGemini(textToSpeak, btnLabelEl = null) {
+            if (activeTtsAudio) {
+                activeTtsAudio.pause();
+                activeTtsAudio = null;
+            }
+            const originalLabel = btnLabelEl ? btnLabelEl.textContent : null;
+            if (btnLabelEl) btnLabelEl.textContent = "Speaking...";
+
+            try {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+                const cleanText = textToSpeak.replace(/<[^>]*>?/gm, '');
+                const payload = {
+                    contents: [{
+                        parts: [{ text: `Say in a cheerful, enthusiastic, friendly kids science show voice: ${cleanText}` }]
+                    }],
+                    generationConfig: {
+                        responseModalities: ["AUDIO"],
+                        speechConfig: {
+                            voiceConfig: {
+                                prebuiltVoiceConfig: { voiceName: "Puck" }
+                            }
+                        }
+                    },
+                    model: "gemini-2.5-flash-preview-tts"
+                };
+
+                const result = await fetchWithRetry(url, payload);
+                const part = result?.candidates?.[0]?.content?.parts?.[0];
+                const audioData = part?.inlineData?.data;
+                const mimeType = part?.inlineData?.mimeType || "audio/L16;rate=24000";
+
+                if (audioData) {
+                    const rateMatch = mimeType.match(/rate=(\d+)/);
+                    const sampleRate = rateMatch ? parseInt(rateMatch[1], 10) : 24000;
+                    const pcmBuffer = base64ToArrayBuffer(audioData);
+                    const pcm16 = new Int16Array(pcmBuffer);
+                    const wavBlob = pcmToWav(pcm16, sampleRate);
+                    const audioUrl = URL.createObjectURL(wavBlob);
+                    activeTtsAudio = new Audio(audioUrl);
+                    activeTtsAudio.onended = () => {
+                        if (btnLabelEl) btnLabelEl.textContent = originalLabel;
+                    };
+                    await activeTtsAudio.play();
+                } else if (btnLabelEl) {
+                    btnLabelEl.textContent = originalLabel;
+                }
+            } catch (err) {
+                if (btnLabelEl) btnLabelEl.textContent = originalLabel;
+            }
+        }
+
+        function speakCurrentCardWithGemini() {
+            const title = document.getElementById('info-title').textContent;
+            const desc = document.getElementById('info-desc').textContent;
+            const fact = document.getElementById('info-fact-text').textContent;
+            const btnText = document.getElementById('tts-btn-text');
+            speakTextWithGemini(`${title}. ${desc} Fun fact: ${fact}`, btnText);
+        }
+
+        // Feature 1: AI Fun Story / Deep-Dive on the currently selected 3D Hotspot
+        async function generateAiDeepDive() {
+            const btnText = document.getElementById('ai-story-btn-text');
+            const descEl = document.getElementById('info-desc');
+            const factEl = document.getElementById('info-fact-text');
+            const title = document.getElementById('info-title').textContent;
+
+            btnText.textContent = "Thinking... ✨";
+            playSound('pop');
+
+            const sunPct = Math.round(simState.sunlight * 100);
+            const waterPct = Math.round(simState.water * 100);
+            const co2Pct = Math.round(simState.co2 * 100);
+            const ratePct = Math.round(simState.rate * 100);
+
+            const systemPrompt = "You are Sunny Sprout, an enthusiastic 3D animated plant teaching kids aged 8-13 about photosynthesis. Return JSON with a short, vivid, magical 2-sentence explanation ('story') and a mind-blowing ('wowFact') about the selected plant part, tailored to the current slider levels.";
+            const userPrompt = `The student clicked on "${title}". Current 3D lab sliders: Sunlight=${sunPct}%, Water=${waterPct}%, CO2=${co2Pct}%, resulting in Photosynthesis Rate=${ratePct}%. Give a fresh, imaginative explanation of "${title}" and how it is behaving right now!`;
+
+            const schema = {
+                type: "OBJECT",
+                properties: {
+                    story: { type: "STRING" },
+                    wowFact: { type: "STRING" }
+                },
+                propertyOrdering: ["story", "wowFact"]
+            };
+
+            try {
+                const data = await callGeminiText(userPrompt, systemPrompt, schema);
+                descEl.innerHTML = data.story;
+                factEl.innerHTML = `<b>✨ Gemini Wow-Fact:</b> ${data.wowFact}`;
+                btnText.textContent = "Another AI Story ✨";
+            } catch (e) {
+                factEl.innerHTML = "Sunny Sprout is soaking up extra sunbeams! Try clicking again in a moment.";
+                btnText.textContent = "AI Fun Story";
+            }
+        }
+
+        // Feature 2: "Talk to Sunny Sprout!" AI Plant Companion & "What-If" Lab
+        function toggleAiPanel() {
+            playSound('pop');
+            const panel = document.getElementById('ai-companion-panel');
+            panel.classList.toggle('hidden');
+            // Hide challenge HUD if open so right side stays clean
+            if (!panel.classList.contains('hidden')) {
+                document.getElementById('challenge-hud').classList.add('hidden');
+            }
+        }
+
+        function switchAiTab(tab) {
+            playSound('pop');
+            const chatTab = document.getElementById('ai-tab-chat');
+            const whatifTab = document.getElementById('ai-tab-whatif');
+            const chatBtn = document.getElementById('tab-chat-btn');
+            const whatifBtn = document.getElementById('tab-whatif-btn');
+
+            if (tab === 'chat') {
+                chatTab.classList.remove('hidden');
+                whatifTab.classList.add('hidden');
+                chatBtn.className = 'py-1.5 rounded-xl bg-white text-emerald-700 shadow-sm transition';
+                whatifBtn.className = 'py-1.5 rounded-xl text-slate-600 hover:text-slate-800 transition';
+            } else {
+                chatTab.classList.add('hidden');
+                whatifTab.classList.remove('hidden');
+                whatifBtn.className = 'py-1.5 rounded-xl bg-white text-purple-700 shadow-sm transition';
+                chatBtn.className = 'py-1.5 rounded-xl text-slate-600 hover:text-slate-800 transition';
+            }
+        }
+
+        function appendChatMessage(role, htmlText, rawTextForTts = null) {
+            const historyEl = document.getElementById('ai-chat-history');
+            const msgDiv = document.createElement('div');
+            if (role === 'user') {
+                msgDiv.className = 'bg-sky-500 text-white p-2.5 rounded-2xl rounded-tr-sm ml-6 shadow-sm';
+                msgDiv.textContent = htmlText;
+            } else {
+                msgDiv.className = 'bg-emerald-50 border border-emerald-200 text-emerald-950 p-3 rounded-2xl rounded-tl-sm mr-2 shadow-sm';
+                const header = document.createElement('div');
+                header.className = 'font-display font-bold text-emerald-700 mb-1 flex items-center justify-between';
+                header.innerHTML = `<span>🌱 Sunny Sprout</span>`;
+                if (rawTextForTts) {
+                    const listenBtn = document.createElement('button');
+                    listenBtn.className = 'text-[10px] bg-emerald-200/80 hover:bg-emerald-300 text-emerald-900 px-2 py-0.5 rounded-full';
+                    listenBtn.textContent = '🔊 Listen';
+                    listenBtn.onclick = () => speakTextWithGemini(rawTextForTts, listenBtn);
+                    header.appendChild(listenBtn);
+                }
+                const body = document.createElement('div');
+                body.innerHTML = htmlText;
+                msgDiv.appendChild(header);
+                msgDiv.appendChild(body);
+            }
+            historyEl.appendChild(msgDiv);
+            historyEl.scrollTop = historyEl.scrollHeight;
+            return msgDiv;
+        }
+
+        async function askSproutPreset(questionText) {
+            document.getElementById('ai-chat-input').value = questionText;
+            await sendSproutMessage(questionText);
+        }
+
+        async function handleChatSubmit(e) {
+            e.preventDefault();
+            const input = document.getElementById('ai-chat-input');
+            const text = input.value.trim();
+            if (!text) return;
+            await sendSproutMessage(text);
+        }
+
+        async function sendSproutMessage(userText) {
+            const input = document.getElementById('ai-chat-input');
+            input.value = '';
+            playSound('pop');
+
+            appendChatMessage('user', userText);
+            const loadingDiv = appendChatMessage('model', '<span class="animate-pulse text-emerald-600">🌿 Rustling my leaves and thinking...</span>');
+
+            const sunPct = Math.round(simState.sunlight * 100);
+            const waterPct = Math.round(simState.water * 100);
+            const co2Pct = Math.round(simState.co2 * 100);
+            const ratePct = Math.round(simState.rate * 100);
+
+            const systemPrompt = `You are "Sunny Sprout", the cheerful, sentient 3D potted plant in the middle of the student's screen!
+Speak in the first person ("my leaves", "my roots", "my chloroplasts"). Keep answers playful, scientifically accurate for kids aged 8-13, and concise (2 to 3 short sentences max, with emojis).
+Always stay aware of your live 3D simulation state:
+- Sunlight slider: ${sunPct}%
+- Water slider: ${waterPct}%
+- Carbon Dioxide (CO2) slider: ${co2Pct}%
+- Overall Photosynthesis Rate: ${ratePct}% (Produces ${Math.round(ratePct * 0.65)} O2 bubbles/min and ${Math.round(ratePct * 0.55)} Glucose sugar/min).
+If any input is low (<35%), playfully mention that it is your "limiting factor" holding back your sugar factory!`;
+
+            try {
+                const reply = await callGeminiText(userText, systemPrompt);
+                loadingDiv.remove();
+                appendChatMessage('model', reply, reply);
+            } catch (err) {
+                loadingDiv.remove();
+                appendChatMessage('model', 'Oops! A little cloud passed over my solar panels. Try asking me again!');
+            }
+        }
+
+        // Feature 3: AI "What-If" Environment Simulator (Structured JSON Output that drives 3D Sliders)
+        async function handleWhatIfSubmit(e) {
+            e.preventDefault();
+            const input = document.getElementById('whatif-input');
+            const scenario = input.value.trim();
+            if (!scenario) return;
+            input.value = '';
+            await runWhatIfScenario(scenario);
+        }
+
+        async function runWhatIfScenario(scenarioName) {
+            playSound('zoom');
+            const card = document.getElementById('whatif-result-card');
+            card.innerHTML = `<div class="text-purple-700 font-bold text-center py-4 animate-pulse">🧪 Gemini AI is simulating "${scenarioName}" and adjusting 3D sliders...</div>`;
+
+            const systemPrompt = `You are a 3D Photosynthesis Environment Simulator for kids. Given any real or imaginative environment/scenario, estimate realistic percentage values (integer 0 to 100) for Sunlight, Water, and Carbon Dioxide (CO2), and explain in 2 playful sentences what happens to the plant's photosynthesis and why.`;
+            const userPrompt = `Simulate this environment for our potted plant: "${scenarioName}"`;
+
+            const schema = {
+                type: "OBJECT",
+                properties: {
+                    scenarioTitle: { type: "STRING" },
+                    sunlight: { type: "INTEGER" },
+                    water: { type: "INTEGER" },
+                    co2: { type: "INTEGER" },
+                    limitingFactor: { type: "STRING" },
+                    plantReaction: { type: "STRING" }
+                },
+                propertyOrdering: ["scenarioTitle", "sunlight", "water", "co2", "limitingFactor", "plantReaction"]
+            };
+
+            try {
+                const sim = await callGeminiText(userPrompt, systemPrompt, schema);
+                const clamp = (v) => Math.max(0, Math.min(100, Math.round(Number(v) || 0)));
+                const s = clamp(sim.sunlight);
+                const w = clamp(sim.water);
+                const c = clamp(sim.co2);
+
+                // Animate sliders to new AI-determined values
+                document.getElementById('slider-sun').value = s;
+                document.getElementById('slider-water').value = w;
+                document.getElementById('slider-co2').value = c;
+                updateEnvironmentControls();
+                playSound('success');
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="font-display font-bold text-purple-900 text-xs">🌍 ${sim.scenarioTitle}</span>
+                        <span class="text-[10px] bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full font-extrabold">Limiting: ${sim.limitingFactor}</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-1 text-center text-[11px] font-extrabold mb-2">
+                        <div class="bg-amber-100 text-amber-900 py-1 rounded-lg">☀️ ${s}%</div>
+                        <div class="bg-sky-100 text-sky-900 py-1 rounded-lg">💧 ${w}%</div>
+                        <div class="bg-slate-200 text-slate-800 py-1 rounded-lg">🫧 ${c}%</div>
+                    </div>
+                    <p class="text-xs text-slate-700 leading-relaxed mb-2">${sim.plantReaction}</p>
+                    <button id="whatif-tts-btn" class="w-full py-1.5 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-900 font-display font-bold text-[11px] transition">
+                        🔊 Hear Sunny Sprout's Reaction
+                    </button>
+                `;
+                const ttsBtn = document.getElementById('whatif-tts-btn');
+                if (ttsBtn) {
+                    ttsBtn.onclick = () => speakTextWithGemini(`${sim.scenarioTitle}! ${sim.plantReaction}`, ttsBtn);
+                }
+            } catch (err) {
+                card.innerHTML = `<div class="text-rose-600 font-bold text-center py-3">Could not simulate scenario right now. Try another one!</div>`;
+            }
+        }
+
+        // Feature 4: Infinite AI Quiz Generator (Structured JSON Output)
+        async function generateAiQuizQuestions() {
+            const btnLabel = document.getElementById('quiz-ai-btn-label');
+            btnLabel.textContent = "Generating with Gemini...";
+            playSound('pop');
+
+            const systemPrompt = "You are a creative science teacher creating 4 fun, thought-provoking multiple-choice questions about photosynthesis, chloroplasts, stomata, xylem, phloem, and limiting factors for middle-school students.";
+            const userPrompt = "Generate 4 brand-new, engaging multiple-choice questions about photosynthesis. Each question must have exactly 4 options and an integer 'correct' index (0 to 3), plus an encouraging 'explain' string.";
+
+            const schema = {
+                type: "ARRAY",
+                items: {
+                    type: "OBJECT",
+                    properties: {
+                        q: { type: "STRING" },
+                        options: {
+                            type: "ARRAY",
+                            items: { type: "STRING" }
+                        },
+                        correct: { type: "INTEGER" },
+                        explain: { type: "STRING" }
+                    },
+                    propertyOrdering: ["q", "options", "correct", "explain"]
+                }
+            };
+
+            try {
+                const newQuestions = await callGeminiText(userPrompt, systemPrompt, schema);
+                if (Array.isArray(newQuestions) && newQuestions.length > 0) {
+                    QUIZ_QUESTIONS.splice(0, QUIZ_QUESTIONS.length, ...newQuestions);
+                    quizIndex = 0;
+                    playSound('success');
+                    renderQuizQuestion();
+                }
+                btnLabel.textContent = "Generate More AI Questions";
+            } catch (err) {
+                btnLabel.textContent = "Try Again ✨";
+            }
+        }
+
+        /********************************************************************
+         * 1. WEB AUDIO SYNTHESIZER (Playful Sound Effects - No External URLs)
+         ********************************************************************/
+        let soundEnabled = true;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                initAudio();
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'pop') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(420, now);
+                    osc.frequency.exponentialRampToValueAtTime(880, now + 0.12);
+                    gain.gain.setValueAtTime(0.18, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+                    osc.start(now);
+                    osc.stop(now + 0.12);
+                } else if (type === 'water') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(280, now);
+                    osc.frequency.exponentialRampToValueAtTime(620, now + 0.25);
+                    gain.gain.setValueAtTime(0.22, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.26);
+                    osc.start(now);
+                    osc.stop(now + 0.26);
+                } else if (type === 'success') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                    osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+                    osc.frequency.setValueAtTime(1046.50, now + 0.3); // C6
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+                    osc.start(now);
+                    osc.stop(now + 0.55);
+                } else if (type === 'zoom') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(340, now);
+                    osc.frequency.exponentialRampToValueAtTime(680, now + 0.22);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+                    osc.start(now);
+                    osc.stop(now + 0.22);
+                }
+            } catch (e) {
+                // Ignore audio context autoplay errors
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('sound-icon');
+            icon.className = soundEnabled ? 'fas fa-volume-up text-lg text-emerald-600' : 'fas fa-volume-mute text-lg text-slate-400';
+            if (soundEnabled) playSound('pop');
+        }
+
+        /********************************************************************
+         * 2. EDUCATIONAL HOTSPOT DATA & CHALLENGES
+         ********************************************************************/
+        const HOTSPOTS = {
+            sun: {
+                id: 'sun',
+                badgeText: '☀️ LIGHT (Energy)',
+                badgeStyle: 'background: linear-gradient(135deg, #facc15, #ea580c); color: #fff;',
+                icon: '☀️',
+                tag: 'Step 1 • Energy Input',
+                title: 'LIGHT (Solar Energy)',
+                desc: 'The cheerful Sun sends down golden light rays! Leaves act like tiny solar panels, soaking up this energy to power the food-making factory inside.',
+                fact: 'Without sunlight, photosynthesis stops at night and plants rest using stored sugar!',
+                pos: new THREE.Vector3(-8.2, 6.3, 0),
+                camPos: new THREE.Vector3(-4.5, 6.2, 13),
+                camTarget: new THREE.Vector3(-5.5, 5.2, 0)
+            },
+            co2: {
+                id: 'co2',
+                badgeText: '🫧 CARBON DIOXIDE (CO₂)',
+                badgeStyle: 'background: linear-gradient(135deg, #64748b, #334155); color: #fff;',
+                icon: '🫧',
+                tag: 'Step 2 • Air Input',
+                title: 'CARBON DIOXIDE (CO₂)',
+                desc: 'Invisible CO₂ gas floats in the air around us. Tiny microscopic mouths on the bottom of leaves called "Stomata" open up to breathe CO₂ in!',
+                fact: 'Every time you exhale, you breathe out Carbon Dioxide that plants love to eat!',
+                pos: new THREE.Vector3(-6.2, 1.8, 1.2),
+                camPos: new THREE.Vector3(-4.5, 2.8, 11.5),
+                camTarget: new THREE.Vector3(-3.0, 2.0, 0)
+            },
+            water: {
+                id: 'water',
+                badgeText: '💧 WATER (H₂O)',
+                badgeStyle: 'background: linear-gradient(135deg, #0ea5e9, #0369a1); color: #fff;',
+                icon: '💧',
+                tag: 'Step 3 • Root Input',
+                title: 'WATER (H₂O) & Roots',
+                desc: 'Deep underground, sprawling roots slurp up glowing blue water droplets like drinking straws! Special tubes called Xylem pump the water up the stem into the leaves.',
+                fact: 'Click the "Pour H₂O" button below to shower the soil with extra water droplets!',
+                pos: new THREE.Vector3(-5.8, -4.5, 1.8),
+                camPos: new THREE.Vector3(-2.5, -2.5, 12.5),
+                camTarget: new THREE.Vector3(-1.5, -3.5, 0)
+            },
+            minerals: {
+                id: 'minerals',
+                badgeText: '✨ MINERALS',
+                badgeStyle: 'background: linear-gradient(135deg, #d97706, #92400e); color: #fff;',
+                icon: '✨',
+                tag: 'Soil Nutrients',
+                title: 'SPARKLING MINERALS',
+                desc: 'Healthy soil is packed with sparkling minerals like Nitrogen, Potassium, and Magnesium. They dissolve in water and travel up the roots to help build strong green leaves!',
+                fact: 'Magnesium is the secret mineral at the heart of every green Chlorophyll molecule!',
+                pos: new THREE.Vector3(5.6, -4.6, 1.8),
+                camPos: new THREE.Vector3(2.5, -2.5, 12.5),
+                camTarget: new THREE.Vector3(1.5, -3.5, 0)
+            },
+            chloroplast: {
+                id: 'chloroplast',
+                badgeText: '🔍 CHLOROPHYLL (Inside Leaf)',
+                badgeStyle: 'background: linear-gradient(135deg, #16a34a, #065f46); color: #fff;',
+                icon: '🔬',
+                tag: 'Step 4 • Cellular Factory',
+                title: 'CHLOROPLAST & CHLOROPHYLL',
+                desc: 'Look inside the 3D Magnifying Lens! Green pancake stacks called Thylakoids hold Chlorophyll. Here, Sunlight splits Water and combines it with CO₂ to make plant food!',
+                fact: 'Chlorophyll loves red and blue light, and bounces back green light—that is why plants look green!',
+                pos: new THREE.Vector3(6.3, 1.2, 2.2),
+                camPos: new THREE.Vector3(5.8, 1.8, 7.6),
+                camTarget: new THREE.Vector3(5.8, 1.5, 1.6)
+            },
+            oxygen: {
+                id: 'oxygen',
+                badgeText: '🫧 OXYGEN (O₂)',
+                badgeStyle: 'background: linear-gradient(135deg, #06b6d4, #0284c7); color: #fff;',
+                icon: '🌬️',
+                tag: 'Step 5 • Fresh Air Output',
+                title: 'OXYGEN (O₂) Released!',
+                desc: 'After the leaf finishes making sugar, it has leftover Oxygen! It releases bubbly light-blue Oxygen (O₂) into the sky so humans and animals can breathe.',
+                fact: 'More than half of Earth’s oxygen comes from green plants and ocean algae!',
+                pos: new THREE.Vector3(3.8, 6.8, 0.5),
+                camPos: new THREE.Vector3(2.5, 5.5, 12.5),
+                camTarget: new THREE.Vector3(2.0, 4.8, 0)
+            },
+            glucose: {
+                id: 'glucose',
+                badgeText: '🍬 GLUCOSE (Sugar)',
+                badgeStyle: 'background: linear-gradient(135deg, #f59e0b, #b45309); color: #fff;',
+                icon: '🍬',
+                tag: 'Step 6 • Plant Food Output',
+                title: 'GLUCOSE (Energy Sugar)',
+                desc: 'Ta-da! The plant creates sparkling golden Glucose sugar (C₆H₁₂O₆)! Special tubes called Phloem carry this yummy sugar down the stem to feed new leaves, flowers, and roots.',
+                fact: 'Plants turn extra glucose into starch inside fruits, potatoes, and seeds!',
+                pos: new THREE.Vector3(5.2, 3.8, 1.0),
+                camPos: new THREE.Vector3(3.0, 3.2, 12.0),
+                camTarget: new THREE.Vector3(1.5, 2.5, 0)
+            }
+        };
+
+        /********************************************************************
+         * 3. THREE.JS SCENE SETUP & BISECTED WORLD ARCHITECTURE
+         ********************************************************************/
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+
+        const camera = new THREE.PerspectiveCamera(44, window.innerWidth / window.innerHeight, 0.1, 200);
+        const defaultCamPos = new THREE.Vector3(-0.8, 1.0, 24.5);
+        const defaultCamTarget = new THREE.Vector3(-0.5, 0.2, 0);
+        camera.position.copy(defaultCamPos);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.06;
+        controls.maxPolarAngle = Math.PI * 0.62;
+        controls.minPolarAngle = Math.PI * 0.18;
+        controls.minDistance = 6;
+        controls.maxDistance = 32;
+        controls.target.copy(defaultCamTarget);
+
+        // Smooth camera interpolation state
+        let desiredCamPos = null;
+        let desiredCamTarget = null;
+        let isZoomedInChloroplast = false;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.72);
+        scene.add(ambientLight);
+
+        const hemiLight = new THREE.HemisphereLight(0xe0f2fe, 0x5c3a21, 0.45);
+        scene.add(hemiLight);
+
+        const sunDirLight = new THREE.DirectionalLight(0xfffbeb, 1.15);
+        sunDirLight.position.set(-10, 14, 10);
+        sunDirLight.castShadow = true;
+        sunDirLight.shadow.mapSize.width = 2048;
+        sunDirLight.shadow.mapSize.height = 2048;
+        sunDirLight.shadow.camera.near = 1;
+        sunDirLight.shadow.camera.far = 40;
+        const d = 14;
+        sunDirLight.shadow.camera.left = -d;
+        sunDirLight.shadow.camera.right = d;
+        sunDirLight.shadow.camera.top = d;
+        sunDirLight.shadow.camera.bottom = -d;
+        scene.add(sunDirLight);
+
+        // Helper for procedural radial glow textures
+        function createRadialTexture(innerColor, outerColor) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            const grad = ctx.createRadialGradient(64, 64, 4, 64, 64, 64);
+            grad.addColorStop(0, innerColor);
+            grad.addColorStop(0.5, outerColor);
+            grad.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 128, 128);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        const glowYellowTex = createRadialTexture('rgba(255, 250, 190, 1)', 'rgba(250, 204, 21, 0.45)');
+        const glowBlueTex = createRadialTexture('rgba(224, 242, 254, 1)', 'rgba(56, 189, 248, 0.45)');
+        const glowGoldTex = createRadialTexture('rgba(254, 243, 199, 1)', 'rgba(245, 158, 11, 0.5)');
+
+        /********************************************************************
+         * 4. BUILD THE BISECTED 3D ENVIRONMENT (ABOVE & UNDERGROUND)
+         ********************************************************************/
+        const worldGroup = new THREE.Group();
+        scene.add(worldGroup);
+
+        // 4A. Underground Soil Cross-Section Block
+        const soilGroup = new THREE.Group();
+        worldGroup.add(soilGroup);
+
+        // Main dark rich soil block
+        const soilGeo = new THREE.BoxGeometry(22, 6.2, 7.5);
+        const soilMat = new THREE.MeshStandardMaterial({
+            color: 0x432312,
+            roughness: 0.92,
+            metalness: 0.05
+        });
+        const soilMesh = new THREE.Mesh(soilGeo, soilMat);
+        soilMesh.position.set(0, -3.3, 0);
+        soilMesh.receiveShadow = true;
+        soilGroup.add(soilMesh);
+
+        // Sub-layer soil strata for visual richness
+        const topSoilGeo = new THREE.BoxGeometry(22.1, 1.1, 7.55);
+        const topSoilMat = new THREE.MeshStandardMaterial({ color: 0x5c341d, roughness: 0.9 });
+        const topSoilMesh = new THREE.Mesh(topSoilGeo, topSoilMat);
+        topSoilMesh.position.set(0, -0.75, 0);
+        soilGroup.add(topSoilMesh);
+
+        // Lush green grass turf strip at y = 0
+        const grassGeo = new THREE.BoxGeometry(22.3, 0.42, 7.7);
+        const grassMat = new THREE.MeshStandardMaterial({ color: 0x4ade80, roughness: 0.65 });
+        const grassMesh = new THREE.Mesh(grassGeo, grassMat);
+        grassMesh.position.set(0, 0, 0);
+        grassMesh.receiveShadow = true;
+        soilGroup.add(grassMesh);
+
+        // Decorative grass blades, pebbles, and cute earthworms on the cutaway face
+        const decoPebbleGeo = new THREE.DodecahedronGeometry(0.22, 1);
+        const decoPebbleMat = new THREE.MeshStandardMaterial({ color: 0x78716c, roughness: 0.8 });
+        for (let i = 0; i < 36; i++) {
+            const pebble = new THREE.Mesh(decoPebbleGeo, decoPebbleMat);
+            const px = (Math.random() - 0.5) * 20;
+            const py = -1.0 - Math.random() * 4.8;
+            const pz = 3.72;
+            pebble.position.set(px, py, pz);
+            pebble.scale.set(0.6 + Math.random() * 0.9, 0.5 + Math.random() * 0.7, 0.4);
+            pebble.rotation.set(Math.random() * 3, Math.random() * 3, 0);
+            soilGroup.add(pebble);
+        }
+
+        // Cute Pink Earthworm peeking from left soil
+        function createCuteWorm(x, y, z, rotZ) {
+            const wormGroup = new THREE.Group();
+            const segMat = new THREE.MeshStandardMaterial({ color: 0xf472b6, roughness: 0.4 });
+            for (let i = 0; i < 5; i++) {
+                const seg = new THREE.Mesh(new THREE.SphereGeometry(0.18 - i * 0.015, 16, 16), segMat);
+                seg.position.set(i * 0.16, Math.sin(i * 0.8) * 0.08, 0);
+                wormGroup.add(seg);
+            }
+            // Eyes
+            const eyeMat = new THREE.MeshBasicMaterial({ color: 0x111827 });
+            const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), eyeMat);
+            const eyeR = eyeL.clone();
+            eyeL.position.set(-0.08, 0.08, 0.15);
+            eyeR.position.set(0.02, 0.08, 0.15);
+            wormGroup.add(eyeL, eyeR);
+            wormGroup.position.set(x, y, z);
+            wormGroup.rotation.z = rotZ;
+            return wormGroup;
+        }
+        soilGroup.add(createCuteWorm(-7.8, -2.2, 3.78, -0.3));
+        soilGroup.add(createCuteWorm(7.5, -3.8, 3.78, 2.7));
+
+        // Grass tufts & colorful tiny wildflowers along the grass line
+        const bladeGeo = new THREE.ConeGeometry(0.09, 0.55, 5);
+        const bladeMat = new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.5 });
+        const flowerColors = [0xf43f5e, 0xfacc15, 0xa855f7, 0x38bdf8];
+        for (let i = 0; i < 65; i++) {
+            const gx = (Math.random() - 0.5) * 21;
+            if (Math.abs(gx) < 2.5) continue; // Leave room for terracotta pot
+            const gz = (Math.random() - 0.5) * 6.8;
+            const blade = new THREE.Mesh(bladeGeo, bladeMat);
+            blade.position.set(gx, 0.38, gz);
+            blade.rotation.z = (Math.random() - 0.5) * 0.4;
+            soilGroup.add(blade);
+
+            if (i % 5 === 0) {
+                const flMat = new THREE.MeshStandardMaterial({ color: flowerColors[i % flowerColors.length] });
+                const flower = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 10), flMat);
+                flower.position.set(gx, 0.58, gz);
+                soilGroup.add(flower);
+            }
+        }
+
+        // 4B. Cutaway Terracotta Pot (Bisected so kids see inside the pot & roots!)
+        const potGroup = new THREE.Group();
+        worldGroup.add(potGroup);
+
+        const terracottaMat = new THREE.MeshStandardMaterial({
+            color: 0xd96b43,
+            roughness: 0.65,
+            side: THREE.DoubleSide
+        });
+        // Back half cylinder so front is open cutaway
+        const potBodyGeo = new THREE.CylinderGeometry(2.35, 1.75, 3.2, 32, 1, false, Math.PI * 0.85, Math.PI * 1.3);
+        const potBody = new THREE.Mesh(potBodyGeo, terracottaMat);
+        potBody.position.set(0, -1.0, 0);
+        potBody.castShadow = true;
+        potGroup.add(potBody);
+
+        // Rim of terracotta pot
+        const potRimGeo = new THREE.TorusGeometry(2.35, 0.22, 16, 40, Math.PI * 1.35);
+        const potRim = new THREE.Mesh(potRimGeo, terracottaMat);
+        potRim.rotation.x = Math.PI / 2;
+        potRim.rotation.z = Math.PI * 0.82;
+        potRim.position.set(0, 0.55, 0);
+        potGroup.add(potRim);
+
+        // Dark potting soil mound inside the cutaway pot
+        const moundGeo = new THREE.CylinderGeometry(2.22, 1.7, 3.0, 24);
+        const moundMat = new THREE.MeshStandardMaterial({ color: 0x361c0d, roughness: 0.95 });
+        const mound = new THREE.Mesh(moundGeo, moundMat);
+        mound.position.set(0, -1.05, -0.2);
+        potGroup.add(mound);
+
+        /********************************************************************
+         * 5. CENTERPIECE 3D GREEN PLANT (STEM, BROAD LEAVES & ROOTS)
+         ********************************************************************/
+        const plantGroup = new THREE.Group();
+        worldGroup.add(plantGroup);
+
+        // 5A. Sprawling 3D Root Network Underground
+        const rootGroup = new THREE.Group();
+        plantGroup.add(rootGroup);
+
+        const rootMat = new THREE.MeshStandardMaterial({
+            color: 0xe7cba9,
+            roughness: 0.7
+        });
+
+        const rootPaths = []; // Save paths so H2O & Mineral particles can travel up the roots!
+
+        function createRootBranch(points, radiusStart, radiusEnd) {
+            const curve = new THREE.CatmullRomCurve3(points);
+            rootPaths.push(curve);
+            const geo = new THREE.TubeGeometry(curve, 28, radiusStart, 10, false);
+            // Taper root vertices
+            const pos = geo.attributes.position;
+            for (let i = 0; i < pos.count; i++) {
+                const vy = pos.getY(i);
+                const factor = Math.max(0.18, 1 - Math.abs(vy) / 6.0);
+                pos.setX(i, pos.getX(i) * (0.3 + 0.7 * factor));
+            }
+            geo.computeVertexNormals();
+            const mesh = new THREE.Mesh(geo, rootMat);
+            rootGroup.add(mesh);
+        }
+
+        // Generate main taproots and sprawling lateral roots
+        const rawRootCoords = [
+            [new THREE.Vector3(-4.2, -5.2, 2.2), new THREE.Vector3(-2.6, -4.1, 1.8), new THREE.Vector3(-1.1, -2.3, 1.0), new THREE.Vector3(0, -0.2, 0)],
+            [new THREE.Vector3(-5.0, -3.5, 1.8), new THREE.Vector3(-3.0, -2.7, 1.5), new THREE.Vector3(-1.2, -1.5, 0.8), new THREE.Vector3(0, -0.2, 0)],
+            [new THREE.Vector3(-2.2, -5.8, 2.0), new THREE.Vector3(-1.4, -4.0, 1.6), new THREE.Vector3(-0.6, -2.0, 0.9), new THREE.Vector3(0, -0.2, 0)],
+            [new THREE.Vector3(0.2, -5.9, 2.1), new THREE.Vector3(0.1, -3.8, 1.5), new THREE.Vector3(0.05, -1.8, 0.8), new THREE.Vector3(0, -0.2, 0)],
+            [new THREE.Vector3(2.5, -5.6, 2.0), new THREE.Vector3(1.6, -3.9, 1.6), new THREE.Vector3(0.7, -2.0, 0.9), new THREE.Vector3(0, -0.2, 0)],
+            [new THREE.Vector3(4.5, -4.9, 2.1), new THREE.Vector3(2.8, -3.7, 1.7), new THREE.Vector3(1.2, -2.1, 1.0), new THREE.Vector3(0, -0.2, 0)],
+            [new THREE.Vector3(5.2, -3.2, 1.7), new THREE.Vector3(3.2, -2.5, 1.4), new THREE.Vector3(1.4, -1.4, 0.7), new THREE.Vector3(0, -0.2, 0)]
+        ];
+        rawRootCoords.forEach(pts => createRootBranch(pts, 0.16, 0.03));
+
+        // 5B. Main Lush Green Stem
+        const stemCurve = new THREE.CatmullRomCurve3([
+            new THREE.Vector3(0, -0.4, 0),
+            new THREE.Vector3(0.08, 1.2, 0.1),
+            new THREE.Vector3(-0.08, 3.0, 0.05),
+            new THREE.Vector3(0.05, 4.9, 0)
+        ]);
+        const stemGeo = new THREE.TubeGeometry(stemCurve, 32, 0.24, 16, false);
+        const stemMat = new THREE.MeshStandardMaterial({
+            color: 0x22c55e,
+            roughness: 0.4,
+            metalness: 0.05
+        });
+        const stemMesh = new THREE.Mesh(stemGeo, stemMat);
+        stemMesh.castShadow = true;
+        plantGroup.add(stemMesh);
+
+        // 5C. Broad Sculpted 3D Leaves with Midribs & Veins
+        const leavesList = [];
+        const leafAttachmentPoints = [];
+
+        function createBroadLeaf(scale, rotY, rotZ, attachPos, tiltX = 0.2) {
+            const leafHolder = new THREE.Group();
+            leafHolder.position.copy(attachPos);
+
+            // Petiole (leaf stalk)
+            const stalkCurve = new THREE.CatmullRomCurve3([
+                new THREE.Vector3(0, 0, 0),
+                new THREE.Vector3(0.5 * scale, 0.2 * scale, 0),
+                new THREE.Vector3(1.0 * scale, 0.15 * scale, 0)
+            ]);
+            const stalkGeo = new THREE.TubeGeometry(stalkCurve, 10, 0.09 * scale, 8, false);
+            const stalkMesh = new THREE.Mesh(stalkGeo, stemMat);
+            leafHolder.add(stalkMesh);
+
+            // Broad heart/teardrop leaf blade using extruded shape
+            const shape = new THREE.Shape();
+            shape.moveTo(0, 0);
+            shape.bezierCurveTo(0.6, 0.9, 2.0, 1.0, 3.2, 0);
+            shape.bezierCurveTo(2.0, -1.0, 0.6, -0.9, 0, 0);
+
+            const extrudeSettings = {
+                steps: 2,
+                depth: 0.06,
+                bevelEnabled: true,
+                bevelThickness: 0.04,
+                bevelSize: 0.06,
+                bevelSegments: 4
+            };
+            const bladeGeo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+            // Curve the leaf naturally downward along its length
+            const pos = bladeGeo.attributes.position;
+            for (let i = 0; i < pos.count; i++) {
+                const lx = pos.getX(i);
+                const ly = pos.getY(i);
+                const bendZ = -Math.pow(lx / 3.2, 2) * 0.45 + Math.abs(ly) * 0.12;
+                pos.setZ(i, pos.getZ(i) + bendZ);
+            }
+            bladeGeo.computeVertexNormals();
+
+            const leafMat = new THREE.MeshStandardMaterial({
+                color: 0x4ade80,
+                roughness: 0.38,
+                metalness: 0.05
+            });
+            const bladeMesh = new THREE.Mesh(bladeGeo, leafMat);
+            bladeMesh.position.set(0.9 * scale, 0.15 * scale, 0);
+            bladeMesh.rotation.x = Math.PI / 2 + tiltX;
+            bladeMesh.scale.set(scale, scale, scale);
+            bladeMesh.castShadow = true;
+            bladeMesh.receiveShadow = true;
+
+            // Bright central midrib vein
+            const veinMat = new THREE.MeshStandardMaterial({ color: 0xa3e635, roughness: 0.3 });
+            const veinCurve = new THREE.CatmullRomCurve3([
+                new THREE.Vector3(0, 0, 0.05),
+                new THREE.Vector3(1.5, 0, -0.04),
+                new THREE.Vector3(3.0, 0, -0.38)
+            ]);
+            const veinGeo = new THREE.TubeGeometry(veinCurve, 12, 0.045, 8, false);
+            const veinMesh = new THREE.Mesh(veinGeo, veinMat);
+            bladeMesh.add(veinMesh);
+
+            leafHolder.add(bladeMesh);
+            leafHolder.rotation.y = rotY;
+            leafHolder.rotation.z = rotZ;
+
+            leafHolder.userData = {
+                baseRotZ: rotZ,
+                baseRotY: rotY,
+                phase: Math.random() * Math.PI * 2,
+                bladeMesh: bladeMesh
+            };
+
+            plantGroup.add(leafHolder);
+            leavesList.push(leafHolder);
+
+            // Compute world center of leaf for particle targets
+            const tipLocal = new THREE.Vector3(2.3 * scale, 0.2 * scale, 0);
+            tipLocal.applyAxisAngle(new THREE.Vector3(0, 0, 1), rotZ);
+            tipLocal.applyAxisAngle(new THREE.Vector3(0, 1, 0), rotY);
+            leafAttachmentPoints.push(attachPos.clone().add(tipLocal));
+        }
+
+        // Create 6 lush broad leaves around the stem
+        createBroadLeaf(1.25, Math.PI * 0.95, -0.18, new THREE.Vector3(0, 1.5, 0.1), -0.2);   // Lower Left Broad Leaf
+        createBroadLeaf(1.30, Math.PI * 0.05, 0.15, new THREE.Vector3(0, 1.9, 0.1), 0.15);    // Lower Right Broad Leaf (Magnifier Leaf)
+        createBroadLeaf(1.18, Math.PI * 0.82, -0.32, new THREE.Vector3(-0.05, 3.2, 0.1), -0.15); // Mid Left Leaf
+        createBroadLeaf(1.20, Math.PI * 0.15, 0.35, new THREE.Vector3(0.05, 3.5, 0.05), 0.2); // Mid Right Leaf
+        createBroadLeaf(0.95, Math.PI * 0.65, -0.45, new THREE.Vector3(0, 4.7, 0), -0.1);     // Top Left Leaf
+        createBroadLeaf(0.95, Math.PI * 0.30, 0.48, new THREE.Vector3(0, 4.8, 0), 0.1);       // Top Right Leaf
+
+        /********************************************************************
+         * 6. CHEERFUL SMILING 3D SUN (UPPER LEFT)
+         ********************************************************************/
+        const sunGroup = new THREE.Group();
+        sunGroup.position.set(-8.2, 6.3, -0.5);
+        worldGroup.add(sunGroup);
+
+        // Glowing golden core sphere
+        const sunGeo = new THREE.SphereGeometry(1.55, 32, 32);
+        const sunMat = new THREE.MeshStandardMaterial({
+            color: 0xfacc15,
+            emissive: 0xf59e0b,
+            emissiveIntensity: 0.55,
+            roughness: 0.25
+        });
+        const sunMesh = new THREE.Mesh(sunGeo, sunMat);
+        sunGroup.add(sunMesh);
+
+        // Sun Corona / Ray Cones around circumference
+        const rayCrownGroup = new THREE.Group();
+        sunGroup.add(rayCrownGroup);
+        const rayConeGeo = new THREE.ConeGeometry(0.36, 0.85, 12);
+        const rayConeMat = new THREE.MeshStandardMaterial({
+            color: 0xfbbf24,
+            emissive: 0xd97706,
+            emissiveIntensity: 0.45
+        });
+        const numSunRays = 12;
+        for (let i = 0; i < numSunRays; i++) {
+            const angle = (i / numSunRays) * Math.PI * 2;
+            const ray = new THREE.Mesh(rayConeGeo, rayConeMat);
+            ray.position.set(Math.cos(angle) * 1.85, Math.sin(angle) * 1.85, 0);
+            ray.rotation.z = angle - Math.PI / 2;
+            rayCrownGroup.add(ray);
+        }
+
+        // Cute Cartoon Face on the Sun (Eyes, Pupils, Rosy Cheeks, Cheerful Smile)
+        const faceGroup = new THREE.Group();
+        faceGroup.position.z = 1.48;
+        sunGroup.add(faceGroup);
+
+        const eyeWhiteGeo = new THREE.SphereGeometry(0.22, 16, 16);
+        const eyeWhiteMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const pupilGeo = new THREE.SphereGeometry(0.12, 16, 16);
+        const pupilMat = new THREE.MeshBasicMaterial({ color: 0x1e293b });
+
+        const leftEye = new THREE.Mesh(eyeWhiteGeo, eyeWhiteMat);
+        leftEye.position.set(-0.48, 0.25, 0);
+        const leftPupil = new THREE.Mesh(pupilGeo, pupilMat);
+        leftPupil.position.set(-0.45, 0.25, 0.15);
+
+        const rightEye = new THREE.Mesh(eyeWhiteGeo, eyeWhiteMat);
+        rightEye.position.set(0.48, 0.25, 0);
+        const rightPupil = new THREE.Mesh(pupilGeo, pupilMat);
+        rightPupil.position.set(0.45, 0.25, 0.15);
+
+        // Rosy cheeks
+        const cheekGeo = new THREE.SphereGeometry(0.18, 12, 12);
+        const cheekMat = new THREE.MeshBasicMaterial({ color: 0xfb7185 });
+        const leftCheek = new THREE.Mesh(cheekGeo, cheekMat);
+        leftCheek.scale.set(1.3, 0.8, 0.5);
+        leftCheek.position.set(-0.78, -0.08, -0.05);
+        const rightCheek = leftCheek.clone();
+        rightCheek.position.set(0.78, -0.08, -0.05);
+
+        // Happy 3D smile arc
+        const smileGeo = new THREE.TorusGeometry(0.38, 0.075, 12, 24, Math.PI);
+        const smileMat = new THREE.MeshBasicMaterial({ color: 0x7c2d12 });
+        const smileMesh = new THREE.Mesh(smileGeo, smileMat);
+        smileMesh.rotation.x = Math.PI;
+        smileMesh.position.set(0, -0.08, 0.04);
+
+        faceGroup.add(leftEye, leftPupil, rightEye, rightPupil, leftCheek, rightCheek, smileMesh);
+
+        // Soft glowing sprite halo behind sun
+        const sunHaloMat = new THREE.SpriteMaterial({ map: glowYellowTex, transparent: true, opacity: 0.85 });
+        const sunHalo = new THREE.Sprite(sunHaloMat);
+        sunHalo.scale.set(6.5, 6.5, 1);
+        sunGroup.add(sunHalo);
+
+        /********************************************************************
+         * 7. 3D CHLOROPLAST MAGNIFYING LENS (CELLULAR ZOOM-IN BUBBLE)
+         ********************************************************************/
+        const magnifierGroup = new THREE.Group();
+        magnifierGroup.position.set(5.8, 1.5, 1.6);
+        magnifierGroup.rotation.y = -0.22;
+        worldGroup.add(magnifierGroup);
+
+        // Metallic Blue-Silver Magnifier Rim
+        const rimGeo = new THREE.TorusGeometry(2.05, 0.18, 20, 48);
+        const rimMat = new THREE.MeshStandardMaterial({
+            color: 0x94a3b8,
+            metalness: 0.65,
+            roughness: 0.25
+        });
+        const rimMesh = new THREE.Mesh(rimGeo, rimMat);
+        magnifierGroup.add(rimMesh);
+
+        // Magnifier Handle
+        const handleGeo = new THREE.CylinderGeometry(0.18, 0.24, 1.8, 16);
+        const handleMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.4 });
+        const handleMesh = new THREE.Mesh(handleGeo, handleMat);
+        handleMesh.position.set(1.75, -1.75, 0);
+        handleMesh.rotation.z = Math.PI / 4;
+        magnifierGroup.add(handleMesh);
+
+        // Translucent Callout Cone connecting Leaf to Magnifier Lens
+        const coneZoomGeo = new THREE.ConeGeometry(1.95, 3.2, 32, 1, true);
+        const coneZoomMat = new THREE.MeshBasicMaterial({
+            color: 0xa7f3d0,
+            transparent: true,
+            opacity: 0.22,
+            side: THREE.DoubleSide
+        });
+        const coneZoomMesh = new THREE.Mesh(coneZoomGeo, coneZoomMat);
+        coneZoomMesh.position.set(-1.6, 0.2, -0.4);
+        coneZoomMesh.rotation.z = Math.PI / 2.2;
+        magnifierGroup.add(coneZoomMesh);
+
+        // Dark green cellular backdrop disc inside the lens
+        const cellBgGeo = new THREE.CircleGeometry(1.98, 36);
+        const cellBgMat = new THREE.MeshStandardMaterial({
+            color: 0x064e3b,
+            roughness: 0.8
+        });
+        const cellBgMesh = new THREE.Mesh(cellBgGeo, cellBgMat);
+        cellBgMesh.position.z = -0.25;
+        magnifierGroup.add(cellBgMesh);
+
+        // 3D Chloroplast Cutaway Body (Bean-shaped double-membrane capsule)
+        const chloroplastInner = new THREE.Group();
+        magnifierGroup.add(chloroplastInner);
+
+        const outerMembraneGeo = new THREE.SphereGeometry(1.35, 28, 20, 0, Math.PI * 2, 0, Math.PI * 0.65);
+        const outerMembraneMat = new THREE.MeshStandardMaterial({
+            color: 0x22c55e,
+            roughness: 0.35,
+            side: THREE.DoubleSide
+        });
+        const outerMembrane = new THREE.Mesh(outerMembraneGeo, outerMembraneMat);
+        outerMembrane.scale.set(1.18, 0.78, 0.65);
+        outerMembrane.rotation.x = Math.PI * 0.62;
+        outerMembrane.rotation.z = -0.25;
+        chloroplastInner.add(outerMembrane);
+
+        // Stacked Thylakoid Discs (Grana) inside Chloroplast
+        const thylakoidGeo = new THREE.CylinderGeometry(0.24, 0.24, 0.09, 20);
+        const thylakoidMat = new THREE.MeshStandardMaterial({
+            color: 0x84cc16,
+            emissive: 0x15803d,
+            emissiveIntensity: 0.3,
+            roughness: 0.25
+        });
+
+        const granaStacks = [
+            { x: -0.65, y: 0.1, count: 5 },
+            { x: 0.0, y: 0.2, count: 6 },
+            { x: 0.65, y: 0.05, count: 5 },
+            { x: -0.3, y: -0.35, count: 4 },
+            { x: 0.38, y: -0.3, count: 4 }
+        ];
+
+        const thylakoidMeshes = [];
+        granaStacks.forEach((stack) => {
+            const stackGroup = new THREE.Group();
+            stackGroup.position.set(stack.x, stack.y, 0.05);
+            stackGroup.rotation.z = -0.2;
+            stackGroup.rotation.x = 0.25;
+            for (let j = 0; j < stack.count; j++) {
+                const disc = new THREE.Mesh(thylakoidGeo, thylakoidMat);
+                disc.position.y = (j - stack.count / 2) * 0.11;
+                stackGroup.add(disc);
+                thylakoidMeshes.push(disc);
+            }
+            chloroplastInner.add(stackGroup);
+        });
+
+        // Stroma Lamellae (Bridges connecting Grana stacks)
+        const bridgeGeo = new THREE.CylinderGeometry(0.035, 0.035, 1.4, 8);
+        const bridgeMesh = new THREE.Mesh(bridgeGeo, thylakoidMat);
+        bridgeMesh.rotation.z = Math.PI / 2 - 0.2;
+        bridgeMesh.position.set(0, 0.12, 0.05);
+        chloroplastInner.add(bridgeMesh);
+
+        // Glass Lens Cover on front of Magnifying Glass
+        const lensGlassGeo = new THREE.CircleGeometry(1.98, 36);
+        const lensGlassMat = new THREE.MeshPhysicalMaterial({
+            color: 0xe0f2fe,
+            transparent: true,
+            opacity: 0.18,
+            roughness: 0.05,
+            reflectivity: 0.9
+        });
+        const lensGlass = new THREE.Mesh(lensGlassGeo, lensGlassMat);
+        lensGlass.position.z = 0.25;
+        magnifierGroup.add(lensGlass);
+
+        /********************************************************************
+         * 8. ANIMATED PARTICLE FLOW SYSTEMS (LIGHT, CO2, H2O, MINERALS, O2, GLUCOSE)
+         ********************************************************************/
+        // Simulation parameters controlled by UI sliders
+        const simState = {
+            sunlight: 0.85,
+            water: 0.80,
+            co2: 0.75,
+            rate: 0.80
+        };
+
+        const particleGroups = {
+            lightRays: [],
+            co2Spheres: [],
+            waterDrops: [],
+            minerals: [],
+            oxygenBubbles: [],
+            glucoseSparks: [],
+            chloroplastSparks: []
+        };
+
+        // 8A. Golden Light Energy Particles (Sun -> Leaves & Chloroplast)
+        const lightParticleGeo = new THREE.SphereGeometry(0.11, 10, 10);
+        const lightParticleMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
+        for (let i = 0; i < 38; i++) {
+            const pGroup = new THREE.Group();
+            const core = new THREE.Mesh(lightParticleGeo, lightParticleMat);
+            const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowYellowTex, transparent: true, opacity: 0.9 }));
+            sprite.scale.set(0.65, 0.65, 1);
+            pGroup.add(core, sprite);
+
+            const targetLeaf = leafAttachmentPoints[i % leafAttachmentPoints.length];
+            pGroup.userData = {
+                progress: Math.random(),
+                speed: 0.35 + Math.random() * 0.25,
+                start: sunGroup.position.clone().add(new THREE.Vector3(1.2, -0.8, (Math.random() - 0.5) * 0.8)),
+                end: (i % 6 === 0) ? magnifierGroup.position.clone().add(new THREE.Vector3(-0.3, 0.2, 0.2)) : targetLeaf.clone()
+            };
+            worldGroup.add(pGroup);
+            particleGroups.lightRays.push(pGroup);
+        }
+
+        // 8B. Floating Blueish-Grey Semi-Transparent CO2 Spheres (Air -> Leaves)
+        const co2Geo = new THREE.SphereGeometry(0.24, 18, 18);
+        const co2Mat = new THREE.MeshPhysicalMaterial({
+            color: 0x94a3b8,
+            transparent: true,
+            opacity: 0.68,
+            roughness: 0.15,
+            metalness: 0.1
+        });
+        const miniAtomGeo = new THREE.SphereGeometry(0.09, 10, 10);
+        const miniAtomMat = new THREE.MeshBasicMaterial({ color: 0xe2e8f0 });
+
+        for (let i = 0; i < 18; i++) {
+            const co2Bubble = new THREE.Mesh(co2Geo, co2Mat);
+            // Two little oxygen atoms inside the CO2 sphere for educational flair
+            const oA = new THREE.Mesh(miniAtomGeo, miniAtomMat);
+            const oB = new THREE.Mesh(miniAtomGeo, miniAtomMat);
+            oA.position.x = -0.11;
+            oB.position.x = 0.11;
+            co2Bubble.add(oA, oB);
+
+            const startPos = new THREE.Vector3(
+                -9.5 - Math.random() * 2.5,
+                0.8 + Math.random() * 3.8,
+                (Math.random() - 0.5) * 2.5
+            );
+            const targetLeaf = leafAttachmentPoints[i % 3];
+            co2Bubble.userData = {
+                progress: Math.random(),
+                speed: 0.2 + Math.random() * 0.15,
+                start: startPos,
+                end: targetLeaf,
+                wobbleOffset: Math.random() * 10
+            };
+            worldGroup.add(co2Bubble);
+            particleGroups.co2Spheres.push(co2Bubble);
+        }
+
+        // 8C. Glowing Blue Water Droplets (Soil -> Roots -> Stem -> Leaves)
+        // Teardrop geometry
+        const dropGeo = new THREE.SphereGeometry(0.14, 14, 14);
+        const posDrop = dropGeo.attributes.position;
+        for (let i = 0; i < posDrop.count; i++) {
+            const vy = posDrop.getY(i);
+            if (vy > 0) {
+                posDrop.setY(i, vy * 1.45);
+                const taper = 1 - (vy / 0.14) * 0.65;
+                posDrop.setX(i, posDrop.getX(i) * taper);
+                posDrop.setZ(i, posDrop.getZ(i) * taper);
+            }
+        }
+        dropGeo.computeVertexNormals();
+
+        const dropMat = new THREE.MeshStandardMaterial({
+            color: 0x0ea5e9,
+            emissive: 0x0284c7,
+            emissiveIntensity: 0.6,
+            roughness: 0.15
+        });
+
+        for (let i = 0; i < 34; i++) {
+            const drop = new THREE.Mesh(dropGeo, dropMat);
+            const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowBlueTex, transparent: true, opacity: 0.75 }));
+            glow.scale.set(0.55, 0.55, 1);
+            drop.add(glow);
+
+            drop.userData = {
+                progress: Math.random(),
+                speed: 0.22 + Math.random() * 0.12,
+                rootCurve: rootPaths[i % rootPaths.length],
+                targetLeaf: leafAttachmentPoints[i % leafAttachmentPoints.length]
+            };
+            worldGroup.add(drop);
+            particleGroups.waterDrops.push(drop);
+        }
+
+        // 8D. Sparkling Colorful Minerals (Soil -> Roots -> Stem)
+        const mineralGeo = new THREE.OctahedronGeometry(0.11, 0);
+        const mineralColors = [0xf472b6, 0xfbbf24, 0xc084fc, 0x34d399];
+        for (let i = 0; i < 24; i++) {
+            const minMat = new THREE.MeshStandardMaterial({
+                color: mineralColors[i % mineralColors.length],
+                emissive: mineralColors[i % mineralColors.length],
+                emissiveIntensity: 0.5,
+                roughness: 0.2
+            });
+            const mineral = new THREE.Mesh(mineralGeo, minMat);
+            mineral.userData = {
+                progress: Math.random(),
+                speed: 0.18 + Math.random() * 0.1,
+                rootCurve: rootPaths[(i + 2) % rootPaths.length],
+                targetLeaf: leafAttachmentPoints[(i + 1) % leafAttachmentPoints.length]
+            };
+            worldGroup.add(mineral);
+            particleGroups.minerals.push(mineral);
+        }
+
+        // 8E. Bubbly Light-Blue Oxygen Spheres (O2) Floating Upward from Leaves
+        const o2Geo = new THREE.SphereGeometry(0.22, 18, 18);
+        const o2Mat = new THREE.MeshPhysicalMaterial({
+            color: 0x38bdf8,
+            emissive: 0x0284c7,
+            emissiveIntensity: 0.35,
+            transparent: true,
+            opacity: 0.82,
+            roughness: 0.1
+        });
+        for (let i = 0; i < 24; i++) {
+            const o2 = new THREE.Mesh(o2Geo, o2Mat);
+            // Little highlight shine dot inside bubble
+            const shine = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+            shine.position.set(-0.07, 0.08, 0.14);
+            o2.add(shine);
+
+            const originLeaf = leafAttachmentPoints[i % leafAttachmentPoints.length];
+            o2.userData = {
+                progress: Math.random(),
+                speed: 0.24 + Math.random() * 0.15,
+                start: originLeaf.clone(),
+                end: originLeaf.clone().add(new THREE.Vector3(1.8 + Math.random() * 2.5, 4.2 + Math.random() * 2.0, (Math.random() - 0.5) * 1.5)),
+                wobble: Math.random() * 10
+            };
+            worldGroup.add(o2);
+            particleGroups.oxygenBubbles.push(o2);
+        }
+
+        // 8F. Golden Sparkly Glucose (Sugar) Particles Pulsing Outward & Through Plant
+        const glucoseGeo = new THREE.DodecahedronGeometry(0.14, 0);
+        const glucoseMat = new THREE.MeshStandardMaterial({
+            color: 0xfbbf24,
+            emissive: 0xf59e0b,
+            emissiveIntensity: 0.8,
+            roughness: 0.2
+        });
+        for (let i = 0; i < 26; i++) {
+            const gGroup = new THREE.Group();
+            const crystal = new THREE.Mesh(glucoseGeo, glucoseMat);
+            const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowGoldTex, transparent: true, opacity: 0.9 }));
+            halo.scale.set(0.65, 0.65, 1);
+            gGroup.add(crystal, halo);
+
+            const startLeaf = leafAttachmentPoints[(i + 1) % leafAttachmentPoints.length];
+            const isPhloemFlow = (i % 2 === 0); // Half flow through the plant stem, half sparkle outward to show Glucose output
+            gGroup.userData = {
+                progress: Math.random(),
+                speed: 0.25 + Math.random() * 0.15,
+                isPhloemFlow: isPhloemFlow,
+                start: startLeaf.clone(),
+                end: isPhloemFlow
+                    ? new THREE.Vector3(0, -1.5, 0.2)
+                    : new THREE.Vector3(4.2 + Math.random() * 2.5, 2.8 + Math.random() * 2.2, (Math.random() - 0.5) * 1.5)
+            };
+            worldGroup.add(gGroup);
+            particleGroups.glucoseSparks.push(gGroup);
+        }
+
+        /********************************************************************
+         * 9. BUILD FLOATING 3D INTERACTIVE LABELS IN DOM
+         ********************************************************************/
+        const labelsContainer = document.getElementById('labels-container');
+        const labelElements = {};
+
+        Object.values(HOTSPOTS).forEach(h => {
+            const el = document.createElement('div');
+            el.className = 'label-3d';
+            el.innerHTML = `
+                <div class="badge-pill" style="${h.badgeStyle}">
+                    <span>${h.badgeText}</span>
+                    <i class="fas fa-circle-info opacity-80 text-xs"></i>
+                </div>
+            `;
+            el.onclick = () => selectHotspot(h.id);
+            labelsContainer.appendChild(el);
+            labelElements[h.id] = el;
+        });
+
+        function toggleLeftInfoCard(show) {
+            playSound('pop');
+            const sidebar = document.getElementById('left-sidebar');
+            const collapsedTab = document.getElementById('info-collapsed-tab');
+            if (show) {
+                sidebar.classList.remove('hidden');
+                collapsedTab.classList.add('hidden');
+            } else {
+                sidebar.classList.add('hidden');
+                collapsedTab.classList.remove('hidden');
+            }
+        }
+
+        function selectHotspot(id) {
+            const h = HOTSPOTS[id];
+            if (!h) return;
+            currentHotspotId = id;
+            playSound('pop');
+
+            // Ensure the lesson card is visible when a student clicks a 3D badge
+            toggleLeftInfoCard(true);
+
+            // Update left educational card & collapsed tab preview
+            document.getElementById('info-icon').textContent = h.icon;
+            document.getElementById('collapsed-info-icon').textContent = h.icon;
+            document.getElementById('collapsed-info-title').textContent = h.title;
+            document.getElementById('info-tag').textContent = h.tag;
+            document.getElementById('info-title').textContent = h.title;
+            document.getElementById('info-desc').innerHTML = h.desc;
+            document.getElementById('info-fact-text').innerHTML = h.fact;
+            document.getElementById('ai-story-btn-text').textContent = "AI Fun Story";
+
+            // Smoothly fly camera to inspect this part of the process
+            desiredCamPos = h.camPos.clone();
+            desiredCamTarget = h.camTarget.clone();
+
+            const overlay = document.getElementById('chloroplast-overlay');
+            if (id === 'chloroplast') {
+                isZoomedInChloroplast = true;
+                overlay.classList.remove('hidden');
+            } else {
+                isZoomedInChloroplast = false;
+                overlay.classList.add('hidden');
+            }
+        }
+
+        function resetCameraView() {
+            playSound('zoom');
+            isZoomedInChloroplast = false;
+            document.getElementById('chloroplast-overlay').classList.add('hidden');
+            desiredCamPos = defaultCamPos.clone();
+            desiredCamTarget = defaultCamTarget.clone();
+        }
+
+        function toggleChloroplastZoom() {
+            if (!isZoomedInChloroplast) {
+                playSound('zoom');
+                selectHotspot('chloroplast');
+            } else {
+                resetCameraView();
+            }
+        }
+
+        // Stop auto-camera flight if user manually drags OrbitControls
+        controls.addEventListener('start', () => {
+            desiredCamPos = null;
+            desiredCamTarget = null;
+        });
+
+        /********************************************************************
+         * 10. UI SLIDERS, HAPPINESS METER & "POUR WATER" BURST
+         ********************************************************************/
+        function updateEnvironmentControls() {
+            const sunVal = parseInt(document.getElementById('slider-sun').value, 10);
+            const waterVal = parseInt(document.getElementById('slider-water').value, 10);
+            const co2Val = parseInt(document.getElementById('slider-co2').value, 10);
+
+            document.getElementById('val-sun').textContent = sunVal + '%';
+            document.getElementById('val-water').textContent = waterVal + '%';
+            document.getElementById('val-co2').textContent = co2Val + '%';
+
+            simState.sunlight = sunVal / 100;
+            simState.water = waterVal / 100;
+            simState.co2 = co2Val / 100;
+
+            // Photosynthesis rate depends on the limiting factor + average of all 3 inputs
+            const minInput = Math.min(simState.sunlight, simState.water, simState.co2);
+            const avgInput = (simState.sunlight + simState.water + simState.co2) / 3;
+            simState.rate = Math.round((minInput * 0.65 + avgInput * 0.35) * 100) / 100;
+
+            const pct = Math.round(simState.rate * 100);
+            document.getElementById('rate-percent').textContent = pct + '%';
+            document.getElementById('rate-bar').style.width = pct + '%';
+
+            // Update live O2 & Glucose counters
+            document.getElementById('o2-rate').textContent = Math.round(pct * 0.65);
+            document.getElementById('glucose-rate').textContent = Math.round(pct * 0.55);
+
+            // Update Plant Mood Emoji & Status Badge
+            const moodEl = document.getElementById('plant-mood-emoji');
+            const badgeEl = document.getElementById('status-badge');
+            if (pct >= 80) {
+                moodEl.textContent = '🤩';
+                badgeEl.textContent = 'Super Thriving! 🌟';
+                badgeEl.className = 'px-2 py-0.5 rounded-full text-[11px] bg-emerald-100 text-emerald-700';
+            } else if (pct >= 45) {
+                moodEl.textContent = '🙂';
+                badgeEl.textContent = 'Growing Steadily 🌱';
+                badgeEl.className = 'px-2 py-0.5 rounded-full text-[11px] bg-sky-100 text-sky-700';
+            } else if (pct >= 15) {
+                moodEl.textContent = '😟';
+                badgeEl.textContent = 'Needs More Inputs! ⚠️';
+                badgeEl.className = 'px-2 py-0.5 rounded-full text-[11px] bg-amber-100 text-amber-700';
+            } else {
+                moodEl.textContent = '🥀';
+                badgeEl.textContent = 'Photosynthesis Paused 💤';
+                badgeEl.className = 'px-2 py-0.5 rounded-full text-[11px] bg-rose-100 text-rose-700';
+            }
+
+            // Adjust 3D Sun brightness & Sky lighting
+            sunDirLight.intensity = 0.25 + simState.sunlight * 1.25;
+            sunMat.emissiveIntensity = 0.15 + simState.sunlight * 0.75;
+            sunHaloMat.opacity = 0.2 + simState.sunlight * 0.8;
+
+            checkChallengeProgress(sunVal, waterVal, co2Val, pct);
+        }
+
+        // "Pour H2O" interactive button burst
+        let waterBoostTimer = 0;
+        function waterThePlantBurst() {
+            playSound('water');
+            const sliderWater = document.getElementById('slider-water');
+            sliderWater.value = Math.min(100, parseInt(sliderWater.value, 10) + 25);
+            waterBoostTimer = 2.5; // 2.5 seconds of fast root absorption boost
+            updateEnvironmentControls();
+        }
+
+        /********************************************************************
+         * 11. FEED THE PLANT CHALLENGE MISSIONS & MINI-QUIZ
+         ********************************************************************/
+        const MISSIONS = [
+            {
+                title: 'Mission 1: Peak Summer Feast! ☀️',
+                desc: 'Help the plant reach maximum food production! Adjust Sunlight, Water, and CO₂ so the Photosynthesis Rate hits <b>90% or higher</b>!',
+                check: (sun, water, co2, rate) => rate >= 90,
+                hint: 'Target: Rate ≥ 90% (Raise all 3 sliders above 90%)'
+            },
+            {
+                title: 'Mission 2: Cloudy Rainstorm! 🌧️',
+                desc: 'Simulate a rainy afternoon: Set <b>Water above 90%</b>, <b>Sunlight between 25% and 45%</b>, and <b>CO₂ above 60%</b> to see how sunlight limits growth!',
+                check: (sun, water, co2, rate) => water >= 90 && sun >= 25 && sun <= 45 && co2 >= 60,
+                hint: 'Target: Water ≥ 90% | Sunlight 25-45% | CO₂ ≥ 60%'
+            },
+            {
+                title: 'Mission 3: Nighttime Rest Mode 🌙',
+                desc: 'What happens when the Sun goes down? Drop <b>Sunlight to 0%</b> while keeping Water & CO₂ above 50% to observe nighttime dormancy!',
+                check: (sun, water, co2, rate) => sun === 0 && water >= 50 && co2 >= 50,
+                hint: 'Target: Sunlight = 0% | Water ≥ 50% | CO₂ ≥ 50%'
+            }
+        ];
+
+        let currentMissionIdx = 0;
+        let missionCompletedFlags = [false, false, false];
+
+        function toggleChallengeModal() {
+            playSound('pop');
+            const hud = document.getElementById('challenge-hud');
+            hud.classList.toggle('hidden');
+            renderMissionHud();
+        }
+
+        function closeChallengeHud() {
+            document.getElementById('challenge-hud').classList.add('hidden');
+        }
+
+        function renderMissionHud() {
+            const m = MISSIONS[currentMissionIdx];
+            const done = missionCompletedFlags[currentMissionIdx];
+            document.getElementById('mission-title').innerHTML = m.title;
+            document.getElementById('mission-desc').innerHTML = m.desc;
+            document.getElementById('mission-targets').innerHTML = `
+                <div class="flex items-center justify-between">
+                    <span>${m.hint}</span>
+                    <span class="px-2 py-0.5 rounded-full ${done ? 'bg-emerald-500 text-white' : 'bg-amber-200 text-amber-900'}">
+                        ${done ? 'COMPLETED! 🎉' : 'In Progress...'}
+                    </span>
+                </div>
+            `;
+        }
+
+        function checkChallengeProgress(sun, water, co2, rate) {
+            const m = MISSIONS[currentMissionIdx];
+            if (!missionCompletedFlags[currentMissionIdx] && m.check(sun, water, co2, rate)) {
+                missionCompletedFlags[currentMissionIdx] = true;
+                playSound('success');
+                renderMissionHud();
+            }
+        }
+
+        function nextMission() {
+            playSound('pop');
+            currentMissionIdx = (currentMissionIdx + 1) % MISSIONS.length;
+            renderMissionHud();
+        }
+
+        // Interactive 4-Question Science Quiz
+        const QUIZ_QUESTIONS = [
+            {
+                q: 'What green pigment inside the chloroplast captures sunlight energy?',
+                options: ['Chlorophyll', 'Hemoglobin', 'Melanin', 'Carotene'],
+                correct: 0,
+                explain: 'Correct! 🌟 Chlorophyll is the green pigment stacked inside thylakoids that traps solar energy!'
+            },
+            {
+                q: 'Which gas do leaves breathe IN from the air to make sugar?',
+                options: ['Oxygen (O₂)', 'Carbon Dioxide (CO₂)', 'Helium (He)', 'Argon (Ar)'],
+                correct: 1,
+                explain: 'Spot on! 🫧 Tiny pores called stomata breathe in Carbon Dioxide (CO₂) gas!'
+            },
+            {
+                q: 'What are the TWO main outputs created by photosynthesis?',
+                options: ['Water & Soil', 'Glucose (Sugar) & Oxygen (O₂)', 'Sunlight & Minerals', 'Carbon Dioxide & Roots'],
+                correct: 1,
+                explain: 'Awesome! 🍬 Plants make Glucose sugar for food and release fresh Oxygen (O₂) into the sky!'
+            },
+            {
+                q: 'How do Water (H₂O) and Minerals get inside the plant?',
+                options: ['Absorbed by underground roots & pumped up the stem', 'Absorbed from moonlight', 'Created by flower petals', 'Poured onto the sun'],
+                correct: 0,
+                explain: 'You got it! 💧 Roots absorb water & minerals from the soil and send them up through xylem tubes!'
+            }
+        ];
+
+        let quizIndex = 0;
+
+        function openQuizModal() {
+            playSound('pop');
+            quizIndex = 0;
+            document.getElementById('quiz-modal').classList.remove('hidden');
+            renderQuizQuestion();
+        }
+
+        function closeQuizModal() {
+            document.getElementById('quiz-modal').classList.add('hidden');
+        }
+
+        function renderQuizQuestion() {
+            const item = QUIZ_QUESTIONS[quizIndex];
+            document.getElementById('quiz-progress').textContent = `Q ${quizIndex + 1}/${QUIZ_QUESTIONS.length}`;
+            document.getElementById('quiz-question').textContent = item.q;
+            document.getElementById('quiz-feedback').className = 'hidden';
+            document.getElementById('quiz-next-btn').classList.add('hidden');
+
+            const optsDiv = document.getElementById('quiz-options');
+            optsDiv.innerHTML = '';
+            item.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full text-left px-4 py-2.5 rounded-2xl border-2 border-slate-200 hover:border-sky-400 bg-slate-50 hover:bg-sky-50 font-bold text-sm text-slate-700 transition flex items-center justify-between';
+                btn.innerHTML = `<span>${opt}</span><i class="fas fa-circle-chevron-right text-slate-300"></i>`;
+                btn.onclick = () => checkQuizAnswer(idx, btn);
+                optsDiv.appendChild(btn);
+            });
+        }
+
+        function checkQuizAnswer(selectedIdx, btnEl) {
+            const item = QUIZ_QUESTIONS[quizIndex];
+            const fb = document.getElementById('quiz-feedback');
+            fb.classList.remove('hidden');
+
+            if (selectedIdx === item.correct) {
+                playSound('success');
+                btnEl.className = 'w-full text-left px-4 py-2.5 rounded-2xl border-2 border-emerald-500 bg-emerald-100 font-bold text-sm text-emerald-900 flex items-center justify-between';
+                fb.className = 'p-3 rounded-2xl text-xs font-bold mb-3 bg-emerald-50 text-emerald-800 border border-emerald-300';
+                fb.textContent = item.explain;
+                document.getElementById('quiz-next-btn').classList.remove('hidden');
+            } else {
+                playSound('pop');
+                btnEl.className = 'w-full text-left px-4 py-2.5 rounded-2xl border-2 border-rose-400 bg-rose-50 font-bold text-sm text-rose-800 flex items-center justify-between';
+                fb.className = 'p-3 rounded-2xl text-xs font-bold mb-3 bg-rose-50 text-rose-800 border border-rose-300';
+                fb.textContent = 'Not quite! Try another answer and think about the 3D badges in the scene!';
+            }
+        }
+
+        function nextQuizQuestion() {
+            playSound('pop');
+            quizIndex++;
+            if (quizIndex >= QUIZ_QUESTIONS.length) {
+                closeQuizModal();
+            } else {
+                renderQuizQuestion();
+            }
+        }
+
+        /********************************************************************
+         * 12. MAIN ANIMATION LOOP & 3D-TO-2D LABEL PROJECTION
+         ********************************************************************/
+        const clock = new THREE.Clock();
+
+        function update3DLabels() {
+            const widthHalf = window.innerWidth / 2;
+            const heightHalf = window.innerHeight / 2;
+
+            Object.values(HOTSPOTS).forEach(h => {
+                const el = labelElements[h.id];
+                if (!el) return;
+                const pos = h.pos.clone();
+                pos.project(camera);
+
+                if (pos.z > 1) {
+                    el.style.opacity = '0';
+                    el.style.pointerEvents = 'none';
+                } else {
+                    const x = (pos.x * widthHalf) + widthHalf;
+                    const y = -(pos.y * heightHalf) + heightHalf;
+                    el.style.left = `${x}px`;
+                    el.style.top = `${y}px`;
+                    el.style.opacity = '1';
+                    el.style.pointerEvents = 'auto';
+                }
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const dt = Math.min(clock.getDelta(), 0.1);
+            const elapsed = clock.getElapsedTime();
+
+            if (waterBoostTimer > 0) {
+                waterBoostTimer = Math.max(0, waterBoostTimer - dt);
+            }
+
+            // Smooth camera flight when a user clicks a hotspot or Zooms into Chloroplast
+            if (desiredCamPos && desiredCamTarget) {
+                camera.position.lerp(desiredCamPos, 0.07);
+                controls.target.lerp(desiredCamTarget, 0.07);
+                if (camera.position.distanceTo(desiredCamPos) < 0.08) {
+                    desiredCamPos = null;
+                    desiredCamTarget = null;
+                }
+            }
+            controls.update();
+
+            // 1. Animate Cheerful Sun rotation & gentle bounce
+            rayCrownGroup.rotation.z = elapsed * (0.25 + simState.sunlight * 0.6);
+            sunGroup.position.y = 6.3 + Math.sin(elapsed * 2.0) * 0.14;
+            const sunScale = 0.85 + simState.sunlight * 0.25;
+            sunGroup.scale.set(sunScale, sunScale, sunScale);
+
+            // 2. Animate Plant Leaves swaying & perking up with plant happiness
+            const droopFactor = (1 - simState.rate) * 0.35;
+            leavesList.forEach((leaf) => {
+                const sway = Math.sin(elapsed * 1.8 + leaf.userData.phase) * (0.03 + simState.rate * 0.04);
+                const dir = leaf.userData.baseRotY > Math.PI * 0.5 ? 1 : -1;
+                leaf.rotation.z = leaf.userData.baseRotZ + sway + (dir * droopFactor);
+            });
+
+            // 3. Animate Chloroplast Thylakoid Stacks pulsing with light energy
+            thylakoidMeshes.forEach((disc, idx) => {
+                const s = 1 + Math.sin(elapsed * 4 + idx) * 0.06 * simState.rate;
+                disc.scale.set(s, 1, s);
+            });
+
+            // 4. Update Light Particles (Sun -> Leaves)
+            particleGroups.lightRays.forEach((p, idx) => {
+                p.visible = simState.sunlight > 0.03 && (idx / particleGroups.lightRays.length) <= simState.sunlight;
+                if (p.visible) {
+                    p.userData.progress += dt * p.userData.speed * (0.5 + simState.sunlight);
+                    if (p.userData.progress > 1) p.userData.progress = 0;
+                    p.position.lerpVectors(p.userData.start, p.userData.end, p.userData.progress);
+                }
+            });
+
+            // 5. Update CO2 Spheres (Air -> Leaves)
+            particleGroups.co2Spheres.forEach((co2, idx) => {
+                co2.visible = simState.co2 > 0.03 && (idx / particleGroups.co2Spheres.length) <= simState.co2;
+                if (co2.visible) {
+                    co2.userData.progress += dt * co2.userData.speed * (0.5 + simState.co2);
+                    if (co2.userData.progress > 1) co2.userData.progress = 0;
+                    const t = co2.userData.progress;
+                    co2.position.lerpVectors(co2.userData.start, co2.userData.end, t);
+                    co2.position.y += Math.sin(elapsed * 3 + co2.userData.wobbleOffset) * 0.25 * (1 - t);
+                    const s = t > 0.8 ? (1 - t) * 5 : 1;
+                    co2.scale.set(s, s, s);
+                }
+            });
+
+            // 6. Update Water Droplets & Minerals (Soil -> Roots -> Stem -> Leaves)
+            const waterSpeedMult = (0.4 + simState.water * 0.9) * (waterBoostTimer > 0 ? 2.2 : 1.0);
+            particleGroups.waterDrops.forEach((drop, idx) => {
+                drop.visible = simState.water > 0.03 && (idx / particleGroups.waterDrops.length) <= (simState.water + (waterBoostTimer > 0 ? 0.3 : 0));
+                if (drop.visible) {
+                    drop.userData.progress += dt * drop.userData.speed * waterSpeedMult;
+                    if (drop.userData.progress > 1) drop.userData.progress = 0;
+                    const t = drop.userData.progress;
+                    if (t < 0.55) {
+                        // Travel along 3D root curve underground
+                        const rt = t / 0.55;
+                        drop.position.copy(drop.userData.rootCurve.getPointAt(rt));
+                    } else if (t < 0.82) {
+                        // Travel up xylem in main stem
+                        const st = (t - 0.55) / 0.27;
+                        drop.position.copy(stemCurve.getPointAt(st));
+                    } else {
+                        // Branch into leaf
+                        const lt = (t - 0.82) / 0.18;
+                        const stemTop = stemCurve.getPointAt(0.75);
+                        drop.position.lerpVectors(stemTop, drop.userData.targetLeaf, lt);
+                    }
+                }
+            });
+
+            particleGroups.minerals.forEach((min, idx) => {
+                min.visible = simState.water > 0.05 && (idx / particleGroups.minerals.length) <= simState.water;
+                if (min.visible) {
+                    min.userData.progress += dt * min.userData.speed * waterSpeedMult;
+                    if (min.userData.progress > 1) min.userData.progress = 0;
+                    const t = min.userData.progress;
+                    min.rotation.x += dt * 3;
+                    min.rotation.y += dt * 3;
+                    if (t < 0.65) {
+                        min.position.copy(min.userData.rootCurve.getPointAt(t / 0.65));
+                    } else {
+                        min.position.copy(stemCurve.getPointAt((t - 0.65) / 0.35));
+                    }
+                }
+            });
+
+            // 7. Update Output Particles: Oxygen (O2) Bubbles & Glucose Sugar Sparks
+            particleGroups.oxygenBubbles.forEach((o2, idx) => {
+                o2.visible = simState.rate > 0.05 && (idx / particleGroups.oxygenBubbles.length) <= simState.rate;
+                if (o2.visible) {
+                    o2.userData.progress += dt * o2.userData.speed * (0.4 + simState.rate);
+                    if (o2.userData.progress > 1) o2.userData.progress = 0;
+                    const t = o2.userData.progress;
+                    o2.position.lerpVectors(o2.userData.start, o2.userData.end, t);
+                    o2.position.x += Math.sin(elapsed * 2.5 + o2.userData.wobble) * 0.2;
+                    const scale = t < 0.2 ? t * 5 : (t > 0.85 ? (1 - t) * 6.6 : 1);
+                    o2.scale.set(scale, scale, scale);
+                }
+            });
+
+            particleGroups.glucoseSparks.forEach((g, idx) => {
+                g.visible = simState.rate > 0.05 && (idx / particleGroups.glucoseSparks.length) <= simState.rate;
+                if (g.visible) {
+                    g.userData.progress += dt * g.userData.speed * (0.4 + simState.rate);
+                    if (g.userData.progress > 1) g.userData.progress = 0;
+                    const t = g.userData.progress;
+                    g.position.lerpVectors(g.userData.start, g.userData.end, t);
+                    g.position.y += Math.sin(t * Math.PI) * 0.6;
+                    g.children[0].rotation.y += dt * 4;
+                    const scale = Math.sin(t * Math.PI);
+                    g.scale.setScalar(Math.max(0.1, scale));
+                }
+            });
+
+            update3DLabels();
+            renderer.render(scene, camera);
+        }
+
+        // Responsive Window Resize Handler
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Start simulation on window load
+        window.onload = function () {
+            updateEnvironmentControls();
+            animate();
+        };
+    </script>
+</body>
+</html>
