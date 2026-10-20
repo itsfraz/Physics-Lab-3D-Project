@@ -1,0 +1,1970 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KVL Physics Lab — 3D Interactive Kirchhoff's Voltage Law Playground</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Three.js & OrbitControls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            lab: {
+              950: '#060911',
+              900: '#0B1120',
+              850: '#0F172A',
+              800: '#1E293B',
+              700: '#334155',
+              cyan: '#06B6D4',
+              emerald: '#10B981',
+              amber: '#F59E0B',
+              rose: '#F43F5E',
+              violet: '#8B5CF6',
+              blue: '#3B82F6',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0B1120;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    body {
+      background-color: #060911;
+      color: #F1F5F9;
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* Range Input Customization */
+    input[type=range] {
+      -webkit-appearance: none;
+      background: transparent;
+      height: 24px;
+    }
+    input[type=range]:focus {
+      outline: none;
+    }
+    input[type=range]::-webkit-slider-runnable-track {
+      width: 100%;
+      height: 6px;
+      cursor: pointer;
+      background: #1E293B;
+      border-radius: 999px;
+      border: 1px solid #334155;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      height: 18px;
+      width: 18px;
+      border-radius: 50%;
+      background: #06B6D4;
+      cursor: pointer;
+      -webkit-appearance: none;
+      margin-top: -6px;
+      box-shadow: 0 0 10px rgba(6, 182, 212, 0.6);
+      transition: all 0.15s ease;
+    }
+    input[type=range]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      box-shadow: 0 0 15px rgba(6, 182, 212, 0.9);
+    }
+    
+    .battery-slider::-webkit-slider-thumb {
+      background: #F59E0B !important;
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.6) !important;
+    }
+    .r1-slider::-webkit-slider-thumb {
+      background: #EC4899 !important;
+      box-shadow: 0 0 10px rgba(236, 72, 153, 0.6) !important;
+    }
+    .r2-slider::-webkit-slider-thumb {
+      background: #8B5CF6 !important;
+      box-shadow: 0 0 10px rgba(139, 92, 246, 0.6) !important;
+    }
+    .r3-slider::-webkit-slider-thumb {
+      background: #3B82F6 !important;
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.6) !important;
+    }
+
+    /* Glassmorphism Classes */
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-panel-subtle {
+      background: rgba(11, 17, 32, 0.6);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .glass-button {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .glass-button:hover {
+      background: rgba(51, 65, 85, 0.9);
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    /* Glow utilities */
+    .glow-cyan {
+      box-shadow: 0 0 20px -3px rgba(6, 182, 212, 0.4);
+    }
+    .glow-emerald {
+      box-shadow: 0 0 25px -3px rgba(16, 185, 129, 0.5);
+    }
+    .glow-amber {
+      box-shadow: 0 0 20px -3px rgba(245, 158, 11, 0.4);
+    }
+
+    /* Tooltip */
+    .has-tooltip {
+      position: relative;
+    }
+    .tooltip-content {
+      visibility: hidden;
+      opacity: 0;
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      transition: all 0.2s ease;
+      z-index: 50;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .has-tooltip:hover .tooltip-content {
+      visibility: visible;
+      opacity: 1;
+      transform: translateX(-50%) translateY(-2px);
+    }
+
+    /* Pulse animation */
+    @keyframes pulse-slow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.85; transform: scale(1.02); }
+    }
+    .pulse-subtle {
+      animation: pulse-slow 3s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col bg-[#060911] text-slate-100 selection:bg-cyan-500 selection:text-black">
+
+  <!-- ========================================================================= -->
+  <!-- TOP NAVIGATION / HEADER -->
+  <!-- ========================================================================= -->
+  <header class="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- Logo & Title -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 via-blue-600 to-indigo-500 p-0.5 shadow-lg shadow-cyan-500/20 flex items-center justify-center">
+          <div class="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
+            <svg class="w-5 h-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base sm:text-lg font-bold tracking-tight text-white flex items-center gap-1.5">
+              KIRCHHOFF'S VOLTAGE LAW
+              <span class="text-xs px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800/80 font-mono font-medium">KVL 3D LAB</span>
+            </h1>
+          </div>
+          <p class="text-xs text-slate-400 hidden sm:block">
+            Loop Rule Playground: <span class="font-mono text-cyan-300 font-semibold">&Sigma;V = 0</span> across any closed loop
+          </p>
+        </div>
+      </div>
+
+      <!-- Quick Telemetry & Status Badges -->
+      <div class="flex items-center gap-3">
+        <!-- Status Indicator -->
+        <div id="topStatusBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-950/70 border border-emerald-500/40 text-emerald-300 text-xs font-mono font-semibold glow-emerald">
+          <span class="relative flex h-2 w-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <span id="topStatusText">&Sigma;V = 0.00V &bull; BALANCED</span>
+        </div>
+
+        <!-- Mode Switches -->
+        <div class="flex items-center bg-slate-900 border border-slate-800 rounded-lg p-1 text-xs font-medium">
+          <button id="modeStandardBtn" onclick="switchLabMode('standard')" class="px-3 py-1 rounded-md bg-cyan-500 text-slate-950 font-semibold shadow transition-all">Standard</button>
+          <button id="modeBeginnerBtn" onclick="switchLabMode('beginner')" class="px-3 py-1 rounded-md text-slate-400 hover:text-white transition-all">Beginner</button>
+          <button id="modeChallengeBtn" onclick="switchLabMode('challenge')" class="px-3 py-1 rounded-md text-slate-400 hover:text-white transition-all flex items-center gap-1">
+            <span>Quiz</span>
+            <span id="quizBadge" class="hidden text-[10px] px-1 bg-amber-500 text-slate-950 rounded font-bold font-mono">1</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- MAIN APP CONTAINER -->
+  <!-- ========================================================================= -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 lg:p-6 grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+    <!-- ===================================================================== -->
+    <!-- LEFT / CENTER COLUMN: 3D LAB PLAYGROUND (LG: 8 COLS) -->
+    <!-- ===================================================================== -->
+    <div class="lg:col-span-8 flex flex-col gap-5">
+      
+      <!-- 3D Circuit Canvas Container -->
+      <div class="relative w-full h-[460px] sm:h-[530px] rounded-2xl glass-panel overflow-hidden border border-slate-800/90 shadow-2xl flex flex-col">
+        
+        <!-- 3D Header Overlay Tools -->
+        <div class="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none z-10">
+          
+          <!-- Top Left Info Tags -->
+          <div class="flex flex-wrap items-center gap-2 pointer-events-auto">
+            <span class="px-2.5 py-1 rounded-md bg-slate-900/90 border border-slate-700/80 text-xs font-mono text-cyan-300 flex items-center gap-1.5 shadow-lg backdrop-blur-md">
+              <svg class="w-3.5 h-3.5 text-cyan-400 animate-spin" style="animation-duration: 4s;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="12"/>
+              </svg>
+              Current: <strong id="canvasCurrentDisplay" class="text-white font-bold">1.00 A</strong>
+            </span>
+
+            <span id="loopDirectionTag" class="px-2.5 py-1 rounded-md bg-slate-900/90 border border-slate-700/80 text-xs font-mono text-slate-300 flex items-center gap-1.5 shadow-lg backdrop-blur-md">
+              <span>Loop:</span> <strong id="loopDirText" class="text-amber-400">Clockwise (CW)</strong>
+            </span>
+
+            <span id="walkActiveBadge" class="hidden px-2.5 py-1 rounded-md bg-amber-950/80 border border-amber-500/60 text-xs font-mono text-amber-300 flex items-center gap-1.5 shadow-lg backdrop-blur-md animate-pulse">
+              <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+              WALK IN PROGRESS
+            </span>
+          </div>
+
+          <!-- Top Right Camera & View Preset Buttons -->
+          <div class="flex items-center gap-1.5 pointer-events-auto bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-lg p-1 shadow-lg">
+            <button onclick="resetCameraView('iso')" title="Perspective 3D View" class="px-2 py-1 text-xs text-slate-300 hover:text-white hover:bg-slate-800 rounded transition font-mono">3D</button>
+            <button onclick="resetCameraView('top')" title="Top-Down Ortho View" class="px-2 py-1 text-xs text-slate-300 hover:text-white hover:bg-slate-800 rounded transition font-mono">Top</button>
+            <button onclick="resetCameraView('front')" title="Front View" class="px-2 py-1 text-xs text-slate-300 hover:text-white hover:bg-slate-800 rounded transition font-mono">Front</button>
+            <button id="toggleWireParticlesBtn" onclick="toggleParticles()" title="Toggle Electron Particles" class="px-2 py-1 text-xs text-cyan-400 hover:bg-slate-800 rounded transition font-mono">e⁻: ON</button>
+          </div>
+        </div>
+
+        <!-- 3D WebGL Canvas -->
+        <div id="threeContainer" class="w-full flex-1 cursor-grab active:cursor-grabbing relative">
+          <!-- Live 3D Overlay Labels will be attached/positioned here -->
+        </div>
+
+        <!-- 3D Bottom Floating Control Bar -->
+        <div class="absolute bottom-3 left-3 right-3 flex flex-wrap items-center justify-between gap-2.5 z-10 pointer-events-none">
+          
+          <!-- Walk Controls -->
+          <div class="flex items-center gap-2 pointer-events-auto bg-slate-950/90 backdrop-blur-md border border-slate-700/80 rounded-xl p-1.5 shadow-xl">
+            <button id="startWalkBtn" onclick="toggleWalkLoop()" class="px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-cyan-500/25 transition-all transform active:scale-95">
+              <svg id="walkBtnIcon" class="w-4 h-4 text-slate-950" viewBox="0 0 24 24" fill="currentColor">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+              <span id="walkBtnText">WALK AROUND LOOP</span>
+            </button>
+
+            <button onclick="stepWalkManual(1)" title="Step to next component" class="p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg text-xs font-mono transition">
+              Step &gt;
+            </button>
+
+            <button onclick="resetWalkLoop()" title="Reset Walk" class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg text-xs transition">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                <path d="M3 3v5h5"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Walk Live Potential Indicator Card -->
+          <div id="walkStationCard" class="pointer-events-auto bg-slate-950/90 backdrop-blur-md border border-slate-700/90 rounded-xl px-3 py-2 text-xs flex items-center gap-3 shadow-xl">
+            <div class="flex flex-col">
+              <span class="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Loop Net Potential</span>
+              <div class="flex items-center gap-1.5">
+                <span id="walkProbePotential" class="font-mono text-base font-bold text-cyan-400">0.00 V</span>
+                <span id="walkProbeDelta" class="text-[11px] font-mono px-1.5 py-0.2 rounded bg-slate-800 text-slate-300">(Ready)</span>
+              </div>
+            </div>
+            <div class="w-px h-8 bg-slate-800"></div>
+            <div class="text-[11px] text-slate-300">
+              Station: <strong id="walkStationName" class="text-amber-400">Start (Node A)</strong>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- ===================================================================== -->
+      <!-- WALK STEP PROGRESSION & RUNNING VOLTAGE TABLE -->
+      <!-- ===================================================================== -->
+      <div class="glass-panel rounded-2xl p-4 sm:p-5 border border-slate-800/80 shadow-lg">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <div class="p-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+              </svg>
+            </div>
+            <h2 class="text-sm sm:text-base font-bold text-white tracking-tight">Loop Step-by-Step Traversal</h2>
+            <span class="text-xs text-slate-400 font-mono">(KVL Proof: ΣV = 0)</span>
+          </div>
+          <span class="text-xs font-mono text-slate-400">Click components or "Walk"</span>
+        </div>
+
+        <!-- 4 Step Station Badges -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          
+          <!-- Station 1: Battery -->
+          <div id="stepCard-bat" class="p-2.5 rounded-xl border border-slate-800 bg-slate-900/60 transition-all duration-300 relative overflow-hidden">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[11px] font-mono font-semibold text-amber-400 flex items-center gap-1">
+                <span>🔋 Battery</span>
+              </span>
+              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800/80 font-bold">RISE</span>
+            </div>
+            <div class="text-xs font-mono text-slate-300 flex items-baseline justify-between">
+              <span>Potential:</span>
+              <strong id="stepBatText" class="text-amber-300 font-bold">+12.00V</strong>
+            </div>
+            <div class="text-[10px] text-slate-400 font-mono mt-0.5">0.0V &rarr; <span id="stepBatAccum" class="text-white font-semibold">12.0V</span></div>
+            <div id="stepBar-bat" class="h-1 bg-amber-500/30 rounded-full mt-2 overflow-hidden">
+              <div class="h-full bg-amber-400 w-full transition-all"></div>
+            </div>
+          </div>
+
+          <!-- Station 2: Resistor R1 -->
+          <div id="stepCard-r1" class="p-2.5 rounded-xl border border-slate-800 bg-slate-900/60 transition-all duration-300 relative overflow-hidden">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[11px] font-mono font-semibold text-pink-400 flex items-center gap-1">
+                <span>⚡ R₁ Drop</span>
+              </span>
+              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-pink-950 text-pink-300 border border-pink-800/80 font-bold">DROP</span>
+            </div>
+            <div class="text-xs font-mono text-slate-300 flex items-baseline justify-between">
+              <span>Potential:</span>
+              <strong id="stepR1Text" class="text-pink-300 font-bold">-5.00V</strong>
+            </div>
+            <div class="text-[10px] text-slate-400 font-mono mt-0.5">12.0V &rarr; <span id="stepR1Accum" class="text-white font-semibold">7.0V</span></div>
+            <div id="stepBar-r1" class="h-1 bg-pink-500/30 rounded-full mt-2 overflow-hidden">
+              <div class="h-full bg-pink-400 w-full transition-all"></div>
+            </div>
+          </div>
+
+          <!-- Station 3: Resistor R2 -->
+          <div id="stepCard-r2" class="p-2.5 rounded-xl border border-slate-800 bg-slate-900/60 transition-all duration-300 relative overflow-hidden">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[11px] font-mono font-semibold text-purple-400 flex items-center gap-1">
+                <span>⚡ R₂ Drop</span>
+              </span>
+              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800/80 font-bold">DROP</span>
+            </div>
+            <div class="text-xs font-mono text-slate-300 flex items-baseline justify-between">
+              <span>Potential:</span>
+              <strong id="stepR2Text" class="text-purple-300 font-bold">-4.00V</strong>
+            </div>
+            <div class="text-[10px] text-slate-400 font-mono mt-0.5">7.0V &rarr; <span id="stepR2Accum" class="text-white font-semibold">3.0V</span></div>
+            <div id="stepBar-r2" class="h-1 bg-purple-500/30 rounded-full mt-2 overflow-hidden">
+              <div class="h-full bg-purple-400 w-full transition-all"></div>
+            </div>
+          </div>
+
+          <!-- Station 4: Resistor R3 -->
+          <div id="stepCard-r3" class="p-2.5 rounded-xl border border-slate-800 bg-slate-900/60 transition-all duration-300 relative overflow-hidden">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[11px] font-mono font-semibold text-blue-400 flex items-center gap-1">
+                <span>⚡ R₃ Drop</span>
+              </span>
+              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800/80 font-bold">DROP</span>
+            </div>
+            <div class="text-xs font-mono text-slate-300 flex items-baseline justify-between">
+              <span>Potential:</span>
+              <strong id="stepR3Text" class="text-blue-300 font-bold">-3.00V</strong>
+            </div>
+            <div class="text-[10px] text-slate-400 font-mono mt-0.5">3.0V &rarr; <span id="stepR3Accum" class="text-emerald-400 font-bold">0.0V</span></div>
+            <div id="stepBar-r3" class="h-1 bg-blue-500/30 rounded-full mt-2 overflow-hidden">
+              <div class="h-full bg-blue-400 w-full transition-all"></div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Live Loop Equation Pill Banner -->
+        <div class="mt-4 p-3 rounded-xl bg-slate-950/80 border border-slate-800 flex flex-wrap items-center justify-between gap-3 font-mono">
+          <div class="flex items-center gap-2 text-xs sm:text-sm">
+            <span class="text-slate-400">Loop Sum:</span>
+            <span id="equationFormula" class="font-bold text-white tracking-wide">
+              <span class="text-amber-400">+12.0V</span>
+              <span class="text-pink-400"> - 5.0V</span>
+              <span class="text-purple-400"> - 4.0V</span>
+              <span class="text-blue-400"> - 3.0V</span>
+              <span class="text-emerald-400 font-extrabold"> = 0.00V</span>
+            </span>
+          </div>
+          
+          <div class="flex items-center gap-2">
+            <span class="text-[11px] text-slate-400">Conservation of Energy:</span>
+            <span class="px-2 py-0.5 rounded bg-emerald-950 border border-emerald-600/60 text-emerald-300 text-xs font-bold">
+              &Sigma;V = 0 &check;
+            </span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ===================================================================== -->
+      <!-- VOLTAGE ENERGY PROFILE / ELEVATION BAR CHART -->
+      <!-- ===================================================================== -->
+      <div class="glass-panel rounded-2xl p-4 sm:p-5 border border-slate-800/80 shadow-lg">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <div class="p-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/30 text-indigo-400">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="20" x2="18" y2="10"/>
+                <line x1="12" y1="20" x2="12" y2="4"/>
+                <line x1="6" y1="20" x2="6" y2="14"/>
+              </svg>
+            </div>
+            <div>
+              <h2 class="text-sm sm:text-base font-bold text-white tracking-tight">Electric Potential Elevation Diagram</h2>
+              <p class="text-xs text-slate-400">Visualizing electrical "height" (Volts) around the loop like a mountain circuit</p>
+            </div>
+          </div>
+          <span class="text-xs font-mono text-cyan-400 bg-cyan-950/60 px-2.5 py-1 rounded-md border border-cyan-800/50">
+            Reference Ground: 0V
+          </span>
+        </div>
+
+        <!-- Canvas based Potential Profile Graph -->
+        <div class="w-full h-36 bg-slate-950 rounded-xl border border-slate-800 relative overflow-hidden">
+          <canvas id="potentialGraphCanvas" class="w-full h-full"></canvas>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- RIGHT COLUMN: CONTROLS, TELEMETRY & TABS (LG: 4 COLS) -->
+    <!-- ===================================================================== -->
+    <div class="lg:col-span-4 flex flex-col gap-5">
+      
+      <!-- =================================================================== -->
+      <!-- CONTROLS PANEL -->
+      <!-- =================================================================== -->
+      <div class="glass-panel rounded-2xl p-4 sm:p-5 border border-slate-800/80 shadow-lg">
+        <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-800">
+          <div class="flex items-center gap-2">
+            <div class="p-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
+            </div>
+            <h2 class="text-sm sm:text-base font-bold text-white tracking-tight">Circuit Controls</h2>
+          </div>
+          <button onclick="resetDefaultValues()" class="text-xs font-mono text-cyan-400 hover:text-cyan-300 transition">
+            Reset (12V)
+          </button>
+        </div>
+
+        <!-- Sliders List -->
+        <div class="space-y-4">
+          
+          <!-- Battery Voltage Slider -->
+          <div class="has-tooltip">
+            <div class="flex items-center justify-between text-xs mb-1">
+              <label for="batteryInput" class="font-semibold text-amber-400 flex items-center gap-1.5">
+                <span>🔋 Battery Voltage (V<sub>s</sub>)</span>
+              </label>
+              <span id="batteryValDisplay" class="font-mono font-bold text-amber-300 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800/60">12.0 V</span>
+            </div>
+            <input type="range" id="batteryInput" class="battery-slider w-full" min="2" max="36" step="1" value="12" oninput="onCircuitParamChange()">
+            <div class="flex justify-between text-[10px] text-slate-500 font-mono mt-0.5">
+              <span>2V</span>
+              <span>12V</span>
+              <span>24V</span>
+              <span>36V</span>
+            </div>
+            <div class="tooltip-content bg-slate-900 text-slate-200 text-xs px-2.5 py-1 rounded shadow-lg border border-slate-700">
+              Battery provides electrical potential energy (voltage rise)
+            </div>
+          </div>
+
+          <!-- Resistor R1 Slider -->
+          <div class="has-tooltip">
+            <div class="flex items-center justify-between text-xs mb-1">
+              <label for="r1Input" class="font-semibold text-pink-400 flex items-center gap-1.5">
+                <span>⚡ Resistor R₁</span>
+              </label>
+              <div class="flex items-center gap-1.5">
+                <span id="r1ValDisplay" class="font-mono font-bold text-pink-300 bg-pink-950/60 px-2 py-0.5 rounded border border-pink-800/60">5.0 &Omega;</span>
+                <span id="r1DropBadge" class="text-[11px] font-mono text-pink-400">(V₁ = 5.0V)</span>
+              </div>
+            </div>
+            <input type="range" id="r1Input" class="r1-slider w-full" min="1" max="20" step="1" value="5" oninput="onCircuitParamChange()">
+            <div class="flex justify-between text-[10px] text-slate-500 font-mono mt-0.5">
+              <span>1&Omega;</span>
+              <span>5&Omega;</span>
+              <span>10&Omega;</span>
+              <span>20&Omega;</span>
+            </div>
+            <div class="tooltip-content bg-slate-900 text-slate-200 text-xs px-2.5 py-1 rounded shadow-lg border border-slate-700">
+              Resistor 1 converts electrical potential to heat: V₁ = I &times; R₁
+            </div>
+          </div>
+
+          <!-- Resistor R2 Slider -->
+          <div class="has-tooltip">
+            <div class="flex items-center justify-between text-xs mb-1">
+              <label for="r2Input" class="font-semibold text-purple-400 flex items-center gap-1.5">
+                <span>⚡ Resistor R₂</span>
+              </label>
+              <div class="flex items-center gap-1.5">
+                <span id="r2ValDisplay" class="font-mono font-bold text-purple-300 bg-purple-950/60 px-2 py-0.5 rounded border border-purple-800/60">4.0 &Omega;</span>
+                <span id="r2DropBadge" class="text-[11px] font-mono text-purple-400">(V₂ = 4.0V)</span>
+              </div>
+            </div>
+            <input type="range" id="r2Input" class="r2-slider w-full" min="1" max="20" step="1" value="4" oninput="onCircuitParamChange()">
+            <div class="flex justify-between text-[10px] text-slate-500 font-mono mt-0.5">
+              <span>1&Omega;</span>
+              <span>4&Omega;</span>
+              <span>10&Omega;</span>
+              <span>20&Omega;</span>
+            </div>
+            <div class="tooltip-content bg-slate-900 text-slate-200 text-xs px-2.5 py-1 rounded shadow-lg border border-slate-700">
+              Resistor 2 voltage drop: V₂ = I &times; R₂
+            </div>
+          </div>
+
+          <!-- Resistor R3 Slider -->
+          <div class="has-tooltip">
+            <div class="flex items-center justify-between text-xs mb-1">
+              <label for="r3Input" class="font-semibold text-blue-400 flex items-center gap-1.5">
+                <span>⚡ Resistor R₃</span>
+              </label>
+              <div class="flex items-center gap-1.5">
+                <span id="r3ValDisplay" class="font-mono font-bold text-blue-300 bg-blue-950/60 px-2 py-0.5 rounded border border-blue-800/60">3.0 &Omega;</span>
+                <span id="r3DropBadge" class="text-[11px] font-mono text-blue-400">(V₃ = 3.0V)</span>
+              </div>
+            </div>
+            <input type="range" id="r3Input" class="r3-slider w-full" min="1" max="20" step="1" value="3" oninput="onCircuitParamChange()">
+            <div class="flex justify-between text-[10px] text-slate-500 font-mono mt-0.5">
+              <span>1&Omega;</span>
+              <span>3&Omega;</span>
+              <span>10&Omega;</span>
+              <span>20&Omega;</span>
+            </div>
+            <div class="tooltip-content bg-slate-900 text-slate-200 text-xs px-2.5 py-1 rounded shadow-lg border border-slate-700">
+              Resistor 3 voltage drop: V₃ = I &times; R₃
+            </div>
+          </div>
+
+          <!-- Loop Direction & Current Animation Speed -->
+          <div class="pt-3 border-t border-slate-800/80 grid grid-cols-2 gap-3">
+            
+            <!-- Loop Traversal Direction Toggle -->
+            <div>
+              <label class="block text-[11px] font-medium text-slate-300 mb-1">Loop Traversal</label>
+              <button id="toggleLoopDirBtn" onclick="toggleLoopDirection()" class="w-full py-1.5 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-mono text-cyan-300 flex items-center justify-center gap-1 transition">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                </svg>
+                <span id="loopDirBtnLabel">CW (Clockwise)</span>
+              </button>
+            </div>
+
+            <!-- Sim Speed Slider -->
+            <div>
+              <div class="flex justify-between text-[11px] font-medium text-slate-300 mb-1">
+                <span>Sim Speed</span>
+                <span id="simSpeedDisplay" class="font-mono text-cyan-400">1.0x</span>
+              </div>
+              <input type="range" id="simSpeedInput" min="0" max="2.5" step="0.25" value="1.0" class="w-full" oninput="onSimSpeedChange()">
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+      <!-- =================================================================== -->
+      <!-- REAL-TIME KVL METRICS & CALCULATIONS CARD -->
+      <!-- =================================================================== -->
+      <div class="glass-panel rounded-2xl p-4 sm:p-5 border border-slate-800/80 shadow-lg">
+        <h3 class="text-xs font-mono uppercase text-slate-400 tracking-wider mb-3 flex items-center justify-between">
+          <span>Loop Telemetry &amp; Ohm's Law</span>
+          <span class="text-cyan-400 text-[10px]">Real-time</span>
+        </h3>
+
+        <div class="grid grid-cols-2 gap-3 mb-3">
+          <!-- Total Resistance -->
+          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80">
+            <span class="text-[10px] text-slate-400 font-mono block">Total Resistance (R_tot)</span>
+            <div class="flex items-baseline gap-1 mt-0.5">
+              <span id="telemetryRtot" class="text-lg font-bold font-mono text-white">12.0</span>
+              <span class="text-xs text-slate-400 font-mono">&Omega;</span>
+            </div>
+            <span class="text-[10px] text-slate-500 font-mono">R₁ + R₂ + R₃</span>
+          </div>
+
+          <!-- Total Current -->
+          <div class="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80">
+            <span class="text-[10px] text-slate-400 font-mono block">Loop Current (I = V/R)</span>
+            <div class="flex items-baseline gap-1 mt-0.5">
+              <span id="telemetryCurrent" class="text-lg font-bold font-mono text-cyan-400">1.00</span>
+              <span class="text-xs text-slate-400 font-mono">A</span>
+            </div>
+            <span id="telemetryCurrentFormula" class="text-[10px] text-slate-500 font-mono">12V / 12&Omega;</span>
+          </div>
+        </div>
+
+        <!-- Total Power Dissipation & Balance Check -->
+        <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between text-xs font-mono">
+          <div>
+            <span class="text-slate-400 block text-[10px]">Total Loop Power (P = V &bull; I)</span>
+            <span id="telemetryPower" class="text-sm font-bold text-amber-300">12.0 W</span>
+          </div>
+          <div class="text-right">
+            <span class="text-slate-400 block text-[10px]">Total Drops (V₁ + V₂ + V₃)</span>
+            <span id="telemetryTotalDrops" class="text-sm font-bold text-pink-300">12.0 V</span>
+          </div>
+        </div>
+
+        <!-- KVL Verification Status Box -->
+        <div id="kvlStatusBox" class="mt-3 p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <svg class="w-5 h-5 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+              <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+            <div>
+              <div class="text-xs font-bold font-mono tracking-wide">KVL SATISFIED</div>
+              <div class="text-[11px] text-emerald-400/80">Net algebraic potential = 0.00V</div>
+            </div>
+          </div>
+          <span class="text-xs font-mono px-2 py-0.5 rounded bg-emerald-900/60 border border-emerald-700/60 font-bold">&Sigma;V = 0</span>
+        </div>
+
+      </div>
+
+      <!-- =================================================================== -->
+      <!-- TABBED KNOWLEDGE / EXPERIMENT / CHALLENGE CONTAINER -->
+      <!-- =================================================================== -->
+      <div class="glass-panel rounded-2xl p-4 sm:p-5 border border-slate-800/80 shadow-lg flex-1 flex flex-col">
+        
+        <!-- Tab Navigation Buttons -->
+        <div class="flex items-center border-b border-slate-800 pb-2 mb-3 gap-2">
+          <button id="tabBtnLearn" onclick="switchRightTab('learn')" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-cyan-950 border border-cyan-800/80 text-cyan-300 transition">
+            Learn KVL
+          </button>
+          <button id="tabBtnConvention" onclick="switchRightTab('convention')" class="text-xs font-semibold px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition">
+            Sign Rules
+          </button>
+          <button id="tabBtnChallenge" onclick="switchRightTab('challenge')" class="text-xs font-semibold px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition flex items-center gap-1">
+            <span>Test Yourself</span>
+          </button>
+        </div>
+
+        <!-- TAB 1: LEARN KVL -->
+        <div id="tabContentLearn" class="space-y-3 text-xs text-slate-300 flex-1">
+          <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+            <h4 class="font-bold text-white text-sm mb-1 flex items-center gap-1.5">
+              <span>What is Kirchhoff's Voltage Law?</span>
+            </h4>
+            <p class="text-slate-300 leading-relaxed">
+              KVL (Loop Rule) is a consequence of the <strong class="text-cyan-300">Law of Conservation of Energy</strong>. Because the electric electrostatic field is conservative, any charge that travels around a complete closed loop returns to its exact starting electric potential.
+            </p>
+          </div>
+
+          <!-- Formula Card -->
+          <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800 font-mono text-center">
+            <div class="text-[11px] text-slate-400 mb-1">Mathematical Statement</div>
+            <div class="text-base sm:text-lg font-bold text-emerald-400">&Sigma; V<sub>loop</sub> = 0</div>
+            <div class="text-slate-400 text-[11px] mt-1">
+              Total Potential Rises = Total Potential Drops
+            </div>
+          </div>
+
+          <!-- Intuitive Analogy -->
+          <div class="p-3 rounded-xl bg-cyan-950/20 border border-cyan-900/40 text-slate-300">
+            <span class="font-bold text-cyan-400 block mb-1">🏔️ The Mountain Analogy</span>
+            <p class="leading-relaxed">
+              Think of a circuit as a hiking loop: The battery is a ski lift that takes you up <strong>+12 meters</strong>. The three resistors are three downward hiking paths dropping you by <strong>-5m, -4m, and -3m</strong>. When you return to the base lodge, your net altitude change is exactly <strong>0 meters</strong>!
+            </p>
+          </div>
+        </div>
+
+        <!-- TAB 2: SIGN CONVENTIONS -->
+        <div id="tabContentConvention" class="hidden space-y-3 text-xs text-slate-300 flex-1">
+          <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+            <h4 class="font-bold text-white text-sm mb-1">Standard Loop Sign Rules</h4>
+            <p class="text-slate-400">
+              When traversing a closed loop in a chosen direction (CW or CCW):
+            </p>
+          </div>
+
+          <!-- Battery Convention -->
+          <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
+            <div class="font-semibold text-amber-400 flex items-center justify-between">
+              <span>Across Battery / Source:</span>
+            </div>
+            <div class="flex items-center justify-between text-[11px] font-mono p-1.5 rounded bg-slate-900">
+              <span>Negative &rarr; Positive (&minus; to +):</span>
+              <span class="text-emerald-400 font-bold">+V (Rise)</span>
+            </div>
+            <div class="flex items-center justify-between text-[11px] font-mono p-1.5 rounded bg-slate-900">
+              <span>Positive &rarr; Negative (+ to &minus;):</span>
+              <span class="text-rose-400 font-bold">&minus;V (Drop)</span>
+            </div>
+          </div>
+
+          <!-- Resistor Convention -->
+          <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
+            <div class="font-semibold text-cyan-400 flex items-center justify-between">
+              <span>Across Resistors (Current I):</span>
+            </div>
+            <div class="flex items-center justify-between text-[11px] font-mono p-1.5 rounded bg-slate-900">
+              <span>Along current direction:</span>
+              <span class="text-rose-400 font-bold">&minus;I&bull;R (Drop)</span>
+            </div>
+            <div class="flex items-center justify-between text-[11px] font-mono p-1.5 rounded bg-slate-900">
+              <span>Against current direction:</span>
+              <span class="text-emerald-400 font-bold">+I&bull;R (Rise)</span>
+            </div>
+          </div>
+
+          <p class="text-[11px] text-slate-400 italic">
+            Try switching the loop direction slider above to see both perspectives evaluate to <span class="text-emerald-400 font-mono font-bold">&Sigma;V = 0</span>!
+          </p>
+        </div>
+
+        <!-- TAB 3: CHALLENGE / QUIZ -->
+        <div id="tabContentChallenge" class="hidden space-y-3 text-xs text-slate-300 flex-1">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-white text-sm">KVL Challenge Quiz</span>
+            <div class="flex items-center gap-2 font-mono text-xs">
+              <span class="text-slate-400">Score:</span>
+              <span id="quizScore" class="font-bold text-amber-400">0 / 0</span>
+            </div>
+          </div>
+
+          <div id="quizQuestionBox" class="p-3 rounded-xl bg-slate-950/90 border border-slate-800 space-y-2.5">
+            <p id="quizQuestionText" class="font-medium text-slate-200 leading-relaxed">
+              A 24V battery is connected to three resistors of 4&Omega;, 8&Omega;, and 12&Omega; in series. What is the voltage drop across the 8&Omega; resistor?
+            </p>
+            
+            <div id="quizOptionsList" class="space-y-1.5">
+              <!-- Dynamically inserted options -->
+            </div>
+          </div>
+
+          <!-- Quiz Feedback -->
+          <div id="quizFeedbackBox" class="hidden p-3 rounded-xl text-xs font-mono">
+            <!-- Dynamically populated -->
+          </div>
+
+          <button id="quizNextBtn" onclick="generateNewQuizQuestion()" class="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs transition">
+            Next Question &rarr;
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- FOOTER -->
+  <!-- ========================================================================= -->
+  <footer class="border-t border-slate-900 bg-slate-950 py-3 px-6 mt-4 text-center text-xs text-slate-500 font-mono">
+    <span>Interactive Physics Laboratory Playground &bull; Kirchhoff's Second Law (&Sigma;V = 0)</span>
+  </footer>
+
+  <!-- ========================================================================= -->
+  <!-- JAVASCRIPT LOGIC -->
+  <!-- ========================================================================= -->
+  <script>
+    /* =========================================================================
+       1. GLOBAL STATE & CIRCUIT PARAMETERS
+       ========================================================================= */
+    const state = {
+      // Circuit components
+      battery: 12.0, // Volts
+      r1: 5.0,       // Ohms
+      r2: 4.0,       // Ohms
+      r3: 3.0,       // Ohms
+      
+      // Derived physics values
+      rTotal: 12.0,
+      current: 1.0,
+      vR1: 5.0,
+      vR2: 4.0,
+      vR3: 3.0,
+      powerTotal: 12.0,
+      
+      // Simulation settings
+      simSpeed: 1.0,
+      particlesEnabled: true,
+      loopDirection: 'CW', // 'CW' or 'CCW'
+      mode: 'standard',    // 'standard', 'beginner', 'challenge'
+      
+      // Walk state
+      isWalking: false,
+      walkProgress: 0.0,   // 0.0 to 1.0
+      walkSpeed: 0.003,
+      currentStationIndex: 0,
+      
+      // Quiz state
+      quizScore: 0,
+      quizTotal: 0,
+      currentQuiz: null
+    };
+
+    /* =========================================================================
+       2. THREE.JS 3D SCENE SETUP
+       ========================================================================= */
+    let scene, camera, renderer, controls;
+    let threeContainer = document.getElementById('threeContainer');
+    let electronParticles = [];
+    let walkMarker = null;
+    let walkMarkerGlow = null;
+    let componentMeshes = {};
+    let voltmeterSprites = {};
+    let wireMeshes = [];
+
+    // Path definitions in 3D: Rectangle on XZ plane
+    // Loop goes:
+    // Node A (Bottom-Left) -> Battery (Left wire going Z- to Z+)
+    // Node B (Top-Left) -> R1 (Top wire going X- to X+)
+    // Node C (Top-Right) -> R2 (Right wire going Z+ to Z-)
+    // Node D (Bottom-Right) -> R3 (Bottom wire going X+ to X-)
+    const LOOP_WIDTH = 14;
+    const LOOP_DEPTH = 10;
+    const HALF_W = LOOP_WIDTH / 2; // 7
+    const HALF_D = LOOP_DEPTH / 2; // 5
+
+    // Key points of the circuit loop in CW order
+    // Start at Node A: (-HALF_W, 0, HALF_D)
+    // Battery is located along the left side: X = -HALF_W
+    // R1 is located along the top side: Z = -HALF_D
+    // R2 is located along the right side: X = +HALF_W
+    // R3 is located along the bottom side: Z = +HALF_D
+    const circuitStations = [
+      { id: 'start', name: 'Start Node A (0V Ref)', pos: new THREE.Vector3(-HALF_W, 0, HALF_D), t: 0.0 },
+      { id: 'bat',   name: 'Battery (+12V Rise)',   pos: new THREE.Vector3(-HALF_W, 0, 0),       t: 0.125 },
+      { id: 'nodeB', name: 'Corner Node B (+12V)',  pos: new THREE.Vector3(-HALF_W, 0, -HALF_D), t: 0.25 },
+      { id: 'r1',    name: 'Resistor R1 (-5V Drop)', pos: new THREE.Vector3(0, 0, -HALF_D),       t: 0.375 },
+      { id: 'nodeC', name: 'Corner Node C (+7V)',   pos: new THREE.Vector3(HALF_W, 0, -HALF_D),  t: 0.5 },
+      { id: 'r2',    name: 'Resistor R2 (-4V Drop)', pos: new THREE.Vector3(HALF_W, 0, 0),        t: 0.625 },
+      { id: 'nodeD', name: 'Corner Node D (+3V)',   pos: new THREE.Vector3(HALF_W, 0, HALF_D),   t: 0.75 },
+      { id: 'r3',    name: 'Resistor R3 (-3V Drop)', pos: new THREE.Vector3(0, 0, HALF_D),        t: 0.875 },
+      { id: 'end',   name: 'Returned to Node A (0V)', pos: new THREE.Vector3(-HALF_W, 0, HALF_D), t: 1.0 }
+    ];
+
+    function initThreeScene() {
+      const width = threeContainer.clientWidth;
+      const height = threeContainer.clientHeight;
+
+      // 1. Scene
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x070b14);
+      scene.fog = new THREE.FogExp2(0x070b14, 0.022);
+
+      // 2. Camera
+      camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+      camera.position.set(0, 16, 17);
+
+      // 3. Renderer
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      threeContainer.appendChild(renderer.domElement);
+
+      // 4. Orbit Controls
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.maxPolarAngle = Math.PI / 2 - 0.05; // don't go below floor
+      controls.minDistance = 6;
+      controls.maxDistance = 35;
+      controls.target.set(0, 0, 0);
+
+      // 5. Lighting
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
+      scene.add(ambientLight);
+
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      dirLight.position.set(12, 20, 10);
+      dirLight.castShadow = true;
+      dirLight.shadow.mapSize.width = 1024;
+      dirLight.shadow.mapSize.height = 1024;
+      scene.add(dirLight);
+
+      const bluePointLight = new THREE.PointLight(0x06b6d4, 1.2, 25);
+      bluePointLight.position.set(0, 5, 0);
+      scene.add(bluePointLight);
+
+      // 6. Scientific Grid Floor
+      const grid = new THREE.GridHelper(32, 32, 0x1e293b, 0x0f172a);
+      grid.position.y = -0.5;
+      scene.add(grid);
+
+      // 7. Build Circuit Components
+      buildCircuitWires();
+      buildBatteryComponent();
+      buildResistorComponents();
+      buildElectronParticles();
+      buildWalkMarker();
+      buildVoltmeterSprites();
+
+      // Window resize listener
+      window.addEventListener('resize', onWindowResize);
+    }
+
+    /* Helper: compute point on rectangular loop for progress t [0, 1] */
+    function getPointOnLoop(t) {
+      t = ((t % 1) + 1) % 1; // normalize to [0, 1)
+      const perimeter = 2 * (LOOP_WIDTH + LOOP_DEPTH);
+      const d = t * perimeter;
+      
+      // Segment 1: Left wire (Z from +HALF_D down to -HALF_D)
+      if (d < LOOP_DEPTH) {
+        const frac = d / LOOP_DEPTH;
+        return new THREE.Vector3(-HALF_W, 0, HALF_D - frac * (2 * HALF_D));
+      }
+      // Segment 2: Top wire (X from -HALF_W to +HALF_W)
+      else if (d < LOOP_DEPTH + LOOP_WIDTH) {
+        const frac = (d - LOOP_DEPTH) / LOOP_WIDTH;
+        return new THREE.Vector3(-HALF_W + frac * (2 * HALF_W), 0, -HALF_D);
+      }
+      // Segment 3: Right wire (Z from -HALF_D to +HALF_D)
+      else if (d < 2 * LOOP_DEPTH + LOOP_WIDTH) {
+        const frac = (d - (LOOP_DEPTH + LOOP_WIDTH)) / LOOP_DEPTH;
+        return new THREE.Vector3(HALF_W, 0, -HALF_D + frac * (2 * HALF_D));
+      }
+      // Segment 4: Bottom wire (X from +HALF_W down to -HALF_W)
+      else {
+        const frac = (d - (2 * LOOP_DEPTH + LOOP_WIDTH)) / LOOP_WIDTH;
+        return new THREE.Vector3(HALF_W - frac * (2 * HALF_W), 0, HALF_D);
+      }
+    }
+
+    /* Build Realistic Glowing Wire Tubes */
+    function buildCircuitWires() {
+      const wireMat = new THREE.MeshStandardMaterial({
+        color: 0x1e293b,
+        metalness: 0.8,
+        roughness: 0.2,
+      });
+
+      const wireRadius = 0.12;
+
+      // 4 wire segments
+      const segments = [
+        // Left wire (Battery is in center, so top and bottom segments)
+        { start: [-HALF_W, 0, HALF_D], end: [-HALF_W, 0, 1.6] },
+        { start: [-HALF_W, 0, -1.6], end: [-HALF_W, 0, -HALF_D] },
+        // Top wire (R1 in center)
+        { start: [-HALF_W, 0, -HALF_D], end: [-1.6, 0, -HALF_D] },
+        { start: [1.6, 0, -HALF_D], end: [HALF_W, 0, -HALF_D] },
+        // Right wire (R2 in center)
+        { start: [HALF_W, 0, -HALF_D], end: [HALF_W, 0, -1.6] },
+        { start: [HALF_W, 0, 1.6], end: [HALF_W, 0, HALF_D] },
+        // Bottom wire (R3 in center)
+        { start: [HALF_W, 0, HALF_D], end: [1.6, 0, HALF_D] },
+        { start: [-1.6, 0, HALF_D], end: [-HALF_W, 0, HALF_D] }
+      ];
+
+      segments.forEach(seg => {
+        const p1 = new THREE.Vector3(...seg.start);
+        const p2 = new THREE.Vector3(...seg.end);
+        const dir = new THREE.Vector3().subVectors(p2, p1);
+        const len = dir.length();
+        const geom = new THREE.CylinderGeometry(wireRadius, wireRadius, len, 16);
+        const mesh = new THREE.Mesh(geom, wireMat);
+        mesh.castShadow = true;
+        
+        // Position and rotate cylinder to align with segment
+        mesh.position.copy(p1).addScaledVector(dir, 0.5);
+        mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+        scene.add(mesh);
+        wireMeshes.push(mesh);
+      });
+
+      // Corner junction nodes
+      const cornerGeom = new THREE.SphereGeometry(wireRadius * 1.5, 16, 16);
+      const cornerMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.9, roughness: 0.1 });
+      [
+        [-HALF_W, 0, -HALF_D],
+        [HALF_W, 0, -HALF_D],
+        [HALF_W, 0, HALF_D],
+        [-HALF_W, 0, HALF_D]
+      ].forEach(pos => {
+        const sphere = new THREE.Mesh(cornerGeom, cornerMat);
+        sphere.position.set(...pos);
+        scene.add(sphere);
+      });
+    }
+
+    /* Build 3D Realistic Battery Mesh */
+    function buildBatteryComponent() {
+      const group = new THREE.Group();
+      group.position.set(-HALF_W, 0, 0);
+
+      // Battery Main Cylindrical Body
+      const bodyGeom = new THREE.CylinderGeometry(0.8, 0.8, 2.6, 32);
+      const bodyMat = new THREE.MeshStandardMaterial({
+        color: 0x1e293b,
+        metalness: 0.85,
+        roughness: 0.25
+      });
+      const body = new THREE.Mesh(bodyGeom, bodyMat);
+      body.rotation.x = Math.PI / 2; // lie along Z axis
+      body.castShadow = true;
+      group.add(body);
+
+      // Glowing Amber Ring in middle of battery
+      const ringGeom = new THREE.CylinderGeometry(0.82, 0.82, 0.9, 32);
+      const ringMat = new THREE.MeshStandardMaterial({
+        color: 0xf59e0b,
+        emissive: 0xf59e0b,
+        emissiveIntensity: 0.6,
+        roughness: 0.3
+      });
+      const ring = new THREE.Mesh(ringGeom, ringMat);
+      ring.rotation.x = Math.PI / 2;
+      group.add(ring);
+
+      // Positive Terminal (Top side / toward Z -)
+      const posCapGeom = new THREE.CylinderGeometry(0.4, 0.4, 0.5, 24);
+      const brassMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.95, roughness: 0.1 });
+      const posCap = new THREE.Mesh(posCapGeom, brassMat);
+      posCap.rotation.x = Math.PI / 2;
+      posCap.position.z = -1.45;
+      group.add(posCap);
+
+      // Negative Terminal (Bottom side / toward Z +)
+      const negCapGeom = new THREE.CylinderGeometry(0.7, 0.7, 0.2, 24);
+      const chromeMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.95, roughness: 0.1 });
+      const negCap = new THREE.Mesh(negCapGeom, chromeMat);
+      negCap.rotation.x = Math.PI / 2;
+      negCap.position.z = 1.35;
+      group.add(negCap);
+
+      // Point Light at Battery
+      const batLight = new THREE.PointLight(0xf59e0b, 1.2, 6);
+      batLight.position.set(0, 0.8, 0);
+      group.add(batLight);
+
+      scene.add(group);
+      componentMeshes['battery'] = { group, ringMat, light: batLight };
+    }
+
+    /* Build 3D Realistic Resistors with Color Bands */
+    function buildResistorComponents() {
+      const resistorConfigs = [
+        { id: 'r1', pos: new THREE.Vector3(0, 0, -HALF_D), rotY: 0, color: 0xec4899, name: 'R1' },
+        { id: 'r2', pos: new THREE.Vector3(HALF_W, 0, 0), rotY: Math.PI / 2, color: 0x8b5cf6, name: 'R2' },
+        { id: 'r3', pos: new THREE.Vector3(0, 0, HALF_D), rotY: 0, color: 0x3b82f6, name: 'R3' }
+      ];
+
+      resistorConfigs.forEach(cfg => {
+        const group = new THREE.Group();
+        group.position.copy(cfg.pos);
+        group.rotation.y = cfg.rotY;
+
+        // Ceramic Resistor Body (beveled cylinder)
+        const bodyGeom = new THREE.CylinderGeometry(0.45, 0.45, 2.2, 24);
+        const ceramicMat = new THREE.MeshStandardMaterial({
+          color: 0xded6c7, // ceramic beige
+          roughness: 0.4,
+          metalness: 0.1
+        });
+        const body = new THREE.Mesh(bodyGeom, ceramicMat);
+        body.rotation.z = Math.PI / 2; // lie along X axis
+        body.castShadow = true;
+        group.add(body);
+
+        // Resistor Metallic End Caps
+        const capGeom = new THREE.CylinderGeometry(0.48, 0.48, 0.25, 24);
+        const capMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.95, roughness: 0.1 });
+        
+        const capLeft = new THREE.Mesh(capGeom, capMat);
+        capLeft.rotation.z = Math.PI / 2;
+        capLeft.position.x = -1.1;
+        group.add(capLeft);
+
+        const capRight = new THREE.Mesh(capGeom, capMat);
+        capRight.rotation.z = Math.PI / 2;
+        capRight.position.x = 1.1;
+        group.add(capRight);
+
+        // Color Bands
+        const bandGeom = new THREE.CylinderGeometry(0.46, 0.46, 0.14, 24);
+        const bandColors = [cfg.color, 0x1e293b, cfg.color, 0xd4af37]; // 4th is gold tolerance
+        const bandPositions = [-0.6, -0.2, 0.2, 0.6];
+
+        bandColors.forEach((bColor, idx) => {
+          const bMat = new THREE.MeshStandardMaterial({ color: bColor, roughness: 0.2 });
+          const band = new THREE.Mesh(bandGeom, bMat);
+          band.rotation.z = Math.PI / 2;
+          band.position.x = bandPositions[idx];
+          group.add(band);
+        });
+
+        // Heat Dissipation Glow Light
+        const heatLight = new THREE.PointLight(cfg.color, 0.8, 4);
+        heatLight.position.set(0, 0.6, 0);
+        group.add(heatLight);
+
+        scene.add(group);
+        componentMeshes[cfg.id] = { group, light: heatLight, baseColor: cfg.color };
+      });
+    }
+
+    /* Build Flowing Electric Charge / Electron Particles */
+    function buildElectronParticles() {
+      const particleCount = 80;
+      const geom = new THREE.SphereGeometry(0.09, 12, 12);
+      const mat = new THREE.MeshBasicMaterial({ color: 0x06b6d4 });
+
+      for (let i = 0; i < particleCount; i++) {
+        const particle = new THREE.Mesh(geom, mat);
+        const initialT = i / particleCount;
+        particle.position.copy(getPointOnLoop(initialT));
+        scene.add(particle);
+        electronParticles.push({ mesh: particle, t: initialT });
+      }
+    }
+
+    /* Build the Glowing Walk Marker Probe */
+    function buildWalkMarker() {
+      const group = new THREE.Group();
+      
+      // Golden glowing probe sphere
+      const sphereGeom = new THREE.SphereGeometry(0.28, 24, 24);
+      const sphereMat = new THREE.MeshStandardMaterial({
+        color: 0xfbbf24,
+        emissive: 0xf59e0b,
+        emissiveIntensity: 0.9,
+        roughness: 0.1
+      });
+      const sphere = new THREE.Mesh(sphereGeom, sphereMat);
+      group.add(sphere);
+
+      // Outer glowing transparent halo
+      const haloGeom = new THREE.SphereGeometry(0.5, 16, 16);
+      const haloMat = new THREE.MeshBasicMaterial({
+        color: 0xfbbf24,
+        transparent: true,
+        opacity: 0.35,
+        wireframe: true
+      });
+      const halo = new THREE.Mesh(haloGeom, haloMat);
+      group.add(halo);
+
+      // Downward pointer cone
+      const coneGeom = new THREE.ConeGeometry(0.18, 0.45, 16);
+      const coneMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
+      const cone = new THREE.Mesh(coneGeom, coneMat);
+      cone.position.y = 0.55;
+      cone.rotation.z = Math.PI;
+      group.add(cone);
+
+      // Point Light
+      const probeLight = new THREE.PointLight(0xf59e0b, 1.5, 5);
+      probeLight.position.y = 0.3;
+      group.add(probeLight);
+
+      group.position.copy(circuitStations[0].pos);
+      group.position.y += 0.4;
+      scene.add(group);
+
+      walkMarker = group;
+      walkMarkerGlow = halo;
+    }
+
+    /* Floating Voltmeter HUD Sprites across components */
+    function makeTextSprite(message, textColor, bgColor) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 128;
+      const ctx = canvas.getContext('2d');
+
+      // Rounded background box
+      ctx.fillStyle = bgColor || 'rgba(15, 23, 42, 0.85)';
+      ctx.strokeStyle = textColor || '#38BDF8';
+      ctx.lineWidth = 4;
+      
+      // Draw rounded rect
+      roundRect(ctx, 6, 6, 244, 116, 16, true, true);
+
+      // Text
+      ctx.fillStyle = textColor || '#FFFFFF';
+      ctx.font = 'bold 36px JetBrains Mono, monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(message, 128, 64);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.minFilter = THREE.LinearFilter;
+      const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true });
+      const sprite = new THREE.Sprite(spriteMat);
+      sprite.scale.set(2.4, 1.2, 1);
+      return { sprite, canvas, ctx, texture };
+    }
+
+    function updateTextSprite(spriteObj, message, textColor, bgColor) {
+      const { ctx, canvas, texture } = spriteObj;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = bgColor || 'rgba(15, 23, 42, 0.85)';
+      ctx.strokeStyle = textColor || '#38BDF8';
+      ctx.lineWidth = 4;
+      roundRect(ctx, 6, 6, 244, 116, 16, true, true);
+
+      ctx.fillStyle = textColor || '#FFFFFF';
+      ctx.font = 'bold 34px JetBrains Mono, monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(message, 128, 64);
+
+      texture.needsUpdate = true;
+    }
+
+    function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+      if (fill) ctx.fill();
+      if (stroke) ctx.stroke();
+    }
+
+    function buildVoltmeterSprites() {
+      // Battery meter
+      const batSprite = makeTextSprite('+12.0 V', '#F59E0B', 'rgba(15, 23, 42, 0.9)');
+      batSprite.sprite.position.set(-HALF_W - 1.8, 1.4, 0);
+      scene.add(batSprite.sprite);
+      voltmeterSprites['bat'] = batSprite;
+
+      // R1 meter
+      const r1Sprite = makeTextSprite('-5.00 V', '#EC4899', 'rgba(15, 23, 42, 0.9)');
+      r1Sprite.sprite.position.set(0, 1.4, -HALF_D - 1.6);
+      scene.add(r1Sprite.sprite);
+      voltmeterSprites['r1'] = r1Sprite;
+
+      // R2 meter
+      const r2Sprite = makeTextSprite('-4.00 V', '#8B5CF6', 'rgba(15, 23, 42, 0.9)');
+      r2Sprite.sprite.position.set(HALF_W + 1.8, 1.4, 0);
+      scene.add(r2Sprite.sprite);
+      voltmeterSprites['r2'] = r2Sprite;
+
+      // R3 meter
+      const r3Sprite = makeTextSprite('-3.00 V', '#3B82F6', 'rgba(15, 23, 42, 0.9)');
+      r3Sprite.sprite.position.set(0, 1.4, HALF_D + 1.6);
+      scene.add(r3Sprite.sprite);
+      voltmeterSprites['r3'] = r3Sprite;
+    }
+
+    function onWindowResize() {
+      if (!threeContainer || !renderer || !camera) return;
+      const width = threeContainer.clientWidth;
+      const height = threeContainer.clientHeight;
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
+    }
+
+    function resetCameraView(preset) {
+      if (!controls || !camera) return;
+      if (preset === 'iso') {
+        camera.position.set(0, 16, 17);
+        controls.target.set(0, 0, 0);
+      } else if (preset === 'top') {
+        camera.position.set(0, 24, 0.1);
+        controls.target.set(0, 0, 0);
+      } else if (preset === 'front') {
+        camera.position.set(0, 5, 20);
+        controls.target.set(0, 0, 0);
+      }
+      controls.update();
+    }
+
+    function toggleParticles() {
+      state.particlesEnabled = !state.particlesEnabled;
+      electronParticles.forEach(p => p.mesh.visible = state.particlesEnabled);
+      const btn = document.getElementById('toggleWireParticlesBtn');
+      if (btn) {
+        btn.textContent = state.particlesEnabled ? 'e⁻: ON' : 'e⁻: OFF';
+        btn.classList.toggle('text-cyan-400', state.particlesEnabled);
+        btn.classList.toggle('text-slate-500', !state.particlesEnabled);
+      }
+    }
+
+    /* =========================================================================
+       3. KVL MATHEMATICS & LIVE CALCULATION ENGINE
+       ========================================================================= */
+    function calculateCircuitPhysics() {
+      // 1. Read input values
+      state.battery = parseFloat(document.getElementById('batteryInput').value);
+      state.r1 = parseFloat(document.getElementById('r1Input').value);
+      state.r2 = parseFloat(document.getElementById('r2Input').value);
+      state.r3 = parseFloat(document.getElementById('r3Input').value);
+
+      // 2. Total series resistance
+      state.rTotal = state.r1 + state.r2 + state.r3;
+
+      // 3. Ohm's Law Current: I = V / R_total
+      state.current = state.rTotal > 0 ? (state.battery / state.rTotal) : 0;
+
+      // 4. Voltage drops across each resistor: V = I * R
+      state.vR1 = state.current * state.r1;
+      state.vR2 = state.current * state.r2;
+      state.vR3 = state.current * state.r3;
+
+      // 5. Total power: P = V * I
+      state.powerTotal = state.battery * state.current;
+
+      // Update UI components
+      updateUIElements();
+      update3DSprites();
+      drawPotentialProfile();
+    }
+
+    function updateUIElements() {
+      // Sliders label updates
+      document.getElementById('batteryValDisplay').textContent = state.battery.toFixed(1) + ' V';
+      document.getElementById('r1ValDisplay').textContent = state.r1.toFixed(1) + ' Ω';
+      document.getElementById('r2ValDisplay').textContent = state.r2.toFixed(1) + ' Ω';
+      document.getElementById('r3ValDisplay').textContent = state.r3.toFixed(1) + ' Ω';
+
+      document.getElementById('r1DropBadge').textContent = `(V₁ = ${state.vR1.toFixed(2)}V)`;
+      document.getElementById('r2DropBadge').textContent = `(V₂ = ${state.vR2.toFixed(2)}V)`;
+      document.getElementById('r3DropBadge').textContent = `(V₃ = ${state.vR3.toFixed(2)}V)`;
+
+      // Telemetry card updates
+      document.getElementById('canvasCurrentDisplay').textContent = state.current.toFixed(2) + ' A';
+      document.getElementById('telemetryRtot').textContent = state.rTotal.toFixed(1);
+      document.getElementById('telemetryCurrent').textContent = state.current.toFixed(2);
+      document.getElementById('telemetryCurrentFormula').textContent = `${state.battery.toFixed(1)}V / ${state.rTotal.toFixed(1)}Ω`;
+      document.getElementById('telemetryPower').textContent = state.powerTotal.toFixed(1) + ' W';
+      document.getElementById('telemetryTotalDrops').textContent = (state.vR1 + state.vR2 + state.vR3).toFixed(2) + ' V';
+
+      // Step cards
+      const isCW = state.loopDirection === 'CW';
+      const batSign = isCW ? '+' : '-';
+      const dropSign = isCW ? '-' : '+';
+
+      document.getElementById('stepBatText').textContent = `${batSign}${state.battery.toFixed(2)}V`;
+      document.getElementById('stepR1Text').textContent = `${dropSign}${state.vR1.toFixed(2)}V`;
+      document.getElementById('stepR2Text').textContent = `${dropSign}${state.vR2.toFixed(2)}V`;
+      document.getElementById('stepR3Text').textContent = `${dropSign}${state.vR3.toFixed(2)}V`;
+
+      // Running accumulation values
+      const accBat = state.battery;
+      const accR1 = accBat - state.vR1;
+      const accR2 = accR1 - state.vR2;
+      const accR3 = 0.00;
+
+      document.getElementById('stepBatAccum').textContent = `${accBat.toFixed(1)}V`;
+      document.getElementById('stepR1Accum').textContent = `${accR1.toFixed(1)}V`;
+      document.getElementById('stepR2Accum').textContent = `${accR2.toFixed(1)}V`;
+      document.getElementById('stepR3Accum').textContent = `${accR3.toFixed(1)}V`;
+
+      // Live Loop Equation formula
+      const eqHTML = `
+        <span class="text-amber-400 font-bold">${batSign}${state.battery.toFixed(1)}V</span>
+        <span class="text-pink-400 font-bold"> ${dropSign} ${state.vR1.toFixed(1)}V</span>
+        <span class="text-purple-400 font-bold"> ${dropSign} ${state.vR2.toFixed(1)}V</span>
+        <span class="text-blue-400 font-bold"> ${dropSign} ${state.vR3.toFixed(1)}V</span>
+        <span class="text-emerald-400 font-extrabold"> = 0.00V</span>
+      `;
+      document.getElementById('equationFormula').innerHTML = eqHTML;
+
+      // Status badges
+      const topBadgeText = document.getElementById('topStatusText');
+      if (topBadgeText) {
+        topBadgeText.innerHTML = `&Sigma;V = 0.00V &bull; BALANCED`;
+      }
+    }
+
+    function update3DSprites() {
+      if (!voltmeterSprites.bat) return;
+      
+      const isCW = state.loopDirection === 'CW';
+      const batSign = isCW ? '+' : '-';
+      const dropSign = isCW ? '-' : '+';
+
+      updateTextSprite(voltmeterSprites.bat, `${batSign}${state.battery.toFixed(1)} V`, '#F59E0B');
+      updateTextSprite(voltmeterSprites.r1, `${dropSign}${state.vR1.toFixed(1)} V`, '#EC4899');
+      updateTextSprite(voltmeterSprites.r2, `${dropSign}${state.vR2.toFixed(1)} V`, '#8B5CF6');
+      updateTextSprite(voltmeterSprites.r3, `${dropSign}${state.vR3.toFixed(1)} V`, '#3B82F6');
+
+      // Adjust heat glow on resistors based on power dissipated
+      if (componentMeshes.r1 && componentMeshes.r1.light) {
+        const p1 = Math.pow(state.current, 2) * state.r1;
+        componentMeshes.r1.light.intensity = 0.4 + Math.min(p1 / 15, 2.5);
+      }
+      if (componentMeshes.r2 && componentMeshes.r2.light) {
+        const p2 = Math.pow(state.current, 2) * state.r2;
+        componentMeshes.r2.light.intensity = 0.4 + Math.min(p2 / 15, 2.5);
+      }
+      if (componentMeshes.r3 && componentMeshes.r3.light) {
+        const p3 = Math.pow(state.current, 2) * state.r3;
+        componentMeshes.r3.light.intensity = 0.4 + Math.min(p3 / 15, 2.5);
+      }
+    }
+
+    function onCircuitParamChange() {
+      calculateCircuitPhysics();
+    }
+
+    function onSimSpeedChange() {
+      const val = parseFloat(document.getElementById('simSpeedInput').value);
+      state.simSpeed = val;
+      document.getElementById('simSpeedDisplay').textContent = val.toFixed(2) + 'x';
+    }
+
+    function toggleLoopDirection() {
+      state.loopDirection = state.loopDirection === 'CW' ? 'CCW' : 'CW';
+      const isCW = state.loopDirection === 'CW';
+      
+      document.getElementById('loopDirText').textContent = isCW ? 'Clockwise (CW)' : 'Counter-Clockwise (CCW)';
+      document.getElementById('loopDirBtnLabel').textContent = isCW ? 'CW (Clockwise)' : 'CCW (Counter-CW)';
+      
+      calculateCircuitPhysics();
+    }
+
+    function resetDefaultValues() {
+      document.getElementById('batteryInput').value = 12;
+      document.getElementById('r1Input').value = 5;
+      document.getElementById('r2Input').value = 4;
+      document.getElementById('r3Input').value = 3;
+      state.loopDirection = 'CW';
+      calculateCircuitPhysics();
+    }
+
+    /* =========================================================================
+       4. POTENTIAL ELEVATION PROFILE (2D CANVAS GRAPH)
+       ========================================================================= */
+    function drawPotentialProfile() {
+      const canvas = document.getElementById('potentialGraphCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      
+      // Resize backing store for DPI
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+
+      const w = rect.width;
+      const h = rect.height;
+
+      // Background
+      ctx.fillStyle = '#070B14';
+      ctx.fillRect(0, 0, w, h);
+
+      // Grid lines
+      ctx.strokeStyle = '#1E293B';
+      ctx.lineWidth = 1;
+      for (let y = 15; y < h; y += 25) {
+        ctx.beginPath();
+        ctx.moveTo(35, y);
+        ctx.lineTo(w - 15, y);
+        ctx.stroke();
+      }
+
+      // Max scale reference
+      const maxV = Math.max(state.battery * 1.25, 14);
+      const toY = (v) => h - 22 - (v / maxV) * (h - 40);
+
+      // 5 Nodes along path:
+      // 0: Start Node A (0V)
+      // 1: After Battery (12V)
+      // 2: After R1 (12 - 5 = 7V)
+      // 3: After R2 (7 - 4 = 3V)
+      // 4: After R3 (3 - 3 = 0V)
+      const nodes = [
+        { name: 'Node A', x: 45, v: 0.0, color: '#38BDF8' },
+        { name: 'Battery (+)', x: 45 + (w - 75) * 0.25, v: state.battery, color: '#F59E0B' },
+        { name: 'R1 Drop', x: 45 + (w - 75) * 0.50, v: state.battery - state.vR1, color: '#EC4899' },
+        { name: 'R2 Drop', x: 45 + (w - 75) * 0.75, v: state.battery - state.vR1 - state.vR2, color: '#8B5CF6' },
+        { name: 'R3 Drop', x: w - 30, v: 0.0, color: '#3B82F6' }
+      ];
+
+      // Draw Axis labels
+      ctx.fillStyle = '#64748B';
+      ctx.font = '10px JetBrains Mono, monospace';
+      ctx.textAlign = 'right';
+      ctx.fillText(`${state.battery.toFixed(0)}V`, 30, toY(state.battery) + 3);
+      ctx.fillText('0V', 30, toY(0) + 3);
+
+      // Draw Gradient Filled Area under the curve
+      const grad = ctx.createLinearGradient(0, toY(state.battery), 0, toY(0));
+      grad.addColorStop(0, 'rgba(6, 182, 212, 0.35)');
+      grad.addColorStop(1, 'rgba(6, 182, 212, 0.02)');
+
+      ctx.beginPath();
+      ctx.moveTo(nodes[0].x, toY(0));
+      // Step up at battery
+      ctx.lineTo(nodes[0].x, toY(nodes[1].v));
+      ctx.lineTo(nodes[1].x, toY(nodes[1].v));
+      // Step down at R1
+      ctx.lineTo(nodes[1].x, toY(nodes[2].v));
+      ctx.lineTo(nodes[2].x, toY(nodes[2].v));
+      // Step down at R2
+      ctx.lineTo(nodes[2].x, toY(nodes[3].v));
+      ctx.lineTo(nodes[3].x, toY(nodes[3].v));
+      // Step down at R3 back to 0
+      ctx.lineTo(nodes[3].x, toY(nodes[4].v));
+      ctx.lineTo(nodes[4].x, toY(nodes[4].v));
+      ctx.lineTo(nodes[4].x, toY(0));
+      ctx.closePath();
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Stroke Line
+      ctx.strokeStyle = '#06B6D4';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(nodes[0].x, toY(0));
+      ctx.lineTo(nodes[0].x, toY(nodes[1].v));
+      ctx.lineTo(nodes[1].x, toY(nodes[1].v));
+      ctx.lineTo(nodes[1].x, toY(nodes[2].v));
+      ctx.lineTo(nodes[2].x, toY(nodes[2].v));
+      ctx.lineTo(nodes[2].x, toY(nodes[3].v));
+      ctx.lineTo(nodes[3].x, toY(nodes[3].v));
+      ctx.lineTo(nodes[3].x, toY(nodes[4].v));
+      ctx.lineTo(nodes[4].x, toY(nodes[4].v));
+      ctx.stroke();
+
+      // Draw Node Markers and text
+      nodes.forEach((n, idx) => {
+        const ny = toY(n.v);
+
+        // Circle marker
+        ctx.fillStyle = n.color;
+        ctx.beginPath();
+        ctx.arc(n.x, ny, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Label
+        ctx.fillStyle = '#CBD5E1';
+        ctx.font = '9px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(n.name, n.x, h - 8);
+
+        // Potential label
+        ctx.fillStyle = n.color;
+        ctx.font = 'bold 10px JetBrains Mono, monospace';
+        ctx.fillText(`${n.v.toFixed(1)}V`, n.x, ny - 8);
+      });
+
+      // If loop walk marker is active, draw live animated position cursor on graph!
+      if (state.isWalking || state.walkProgress > 0) {
+        const curT = state.walkProgress;
+        let curX = nodes[0].x + curT * (nodes[4].x - nodes[0].x);
+        let curV = 0;
+        if (curT < 0.25) {
+          curV = state.battery;
+        } else if (curT < 0.50) {
+          curV = state.battery - state.vR1;
+        } else if (curT < 0.75) {
+          curV = state.battery - state.vR1 - state.vR2;
+        } else {
+          curV = 0;
+        }
+
+        const probeY = toY(curV);
+
+        // Vertical glowing scan line
+        ctx.strokeStyle = 'rgba(245, 158, 11, 0.7)';
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(curX, 10);
+        ctx.lineTo(curX, h - 20);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Pulsing probe marker on graph
+        ctx.fillStyle = '#F59E0B';
+        ctx.beginPath();
+        ctx.arc(curX, probeY, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#FFF';
+        ctx.stroke();
+      }
+    }
+
+    /* =========================================================================
+       5. "WALK AROUND THE LOOP" ANIMATION CONTROLLER
+       ========================================================================= */
+    function toggleWalkLoop() {
+      state.isWalking = !state.isWalking;
+      const btnText = document.getElementById('walkBtnText');
+      const btnIcon = document.getElementById('walkBtnIcon');
+      const badge = document.getElementById('walkActiveBadge');
+
+      if (state.isWalking) {
+        btnText.textContent = 'PAUSE LOOP WALK';
+        btnIcon.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+        badge.classList.remove('hidden');
+      } else {
+        btnText.textContent = 'RESUME LOOP WALK';
+        btnIcon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
+        badge.classList.add('hidden');
+      }
+    }
+
+    function resetWalkLoop() {
+      state.isWalking = false;
+      state.walkProgress = 0.0;
+      updateWalkUI(0.0);
+
+      const btnText = document.getElementById('walkBtnText');
+      const btnIcon = document.getElementById('walkBtnIcon');
+      const badge = document.getElementById('walkActiveBadge');
+
+      if (btnText) btnText.textContent = 'WALK AROUND LOOP';
+      if (btnIcon) btnIcon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
+      if (badge) badge.classList.add('hidden');
+
+      if (walkMarker) {
+        walkMarker.position.copy(circuitStations[0].pos);
+        walkMarker.position.y += 0.4;
+      }
+      drawPotentialProfile();
+    }
+
+    function stepWalkManual(stepDir) {
+      state.isWalking = false;
+      state.walkProgress = (state.walkProgress + 0.125 * stepDir + 1.0) % 1.0;
+      updateWalkUI(state.walkProgress);
+      drawPotentialProfile();
+    }
+
+    function updateWalkUI(t) {
+      // Find current station along loop
+      let potential = 0.0;
+      let stationName = 'Node A (Ground Ref)';
+      let deltaText = 'Start (0V)';
+
+      // Segment breakdown:
+      // t in [0.00, 0.25): Battery section
+      // t in [0.25, 0.50): R1 section
+      // t in [0.50, 0.75): R2 section
+      // t in [0.75, 1.00]: R3 section
+      if (t < 0.25) {
+        potential = state.battery;
+        stationName = 'Station 1: Battery (+Rise)';
+        deltaText = `+${state.battery.toFixed(1)}V Rise`;
+        highlightStepCard('bat');
+      } else if (t < 0.50) {
+        potential = state.battery - state.vR1;
+        stationName = 'Station 2: Resistor R1 (-Drop)';
+        deltaText = `-${state.vR1.toFixed(1)}V Drop`;
+        highlightStepCard('r1');
+      } else if (t < 0.75) {
+        potential = state.battery - state.vR1 - state.vR2;
+        stationName = 'Station 3: Resistor R2 (-Drop)';
+        deltaText = `-${state.vR2.toFixed(1)}V Drop`;
+        highlightStepCard('r2');
+      } else {
+        potential = 0.00;
+        stationName = 'Station 4: Resistor R3 (-Drop & Return)';
+        deltaText = `-${state.vR3.toFixed(1)}V Drop &rarr; 0V`;
+        highlightStepCard('r3');
+      }
+
+      document.getElementById('walkProbePotential').textContent = potential.toFixed(2) + ' V';
+      document.getElementById('walkProbeDelta').innerHTML = deltaText;
+      document.getElementById('walkStationName').textContent = stationName;
+    }
+
+    function highlightStepCard(activeId) {
+      ['bat', 'r1', 'r2', 'r3'].forEach(id => {
+        const card = document.getElementById(`stepCard-${id}`);
+        if (!card) return;
+        if (id === activeId) {
+          card.classList.add('border-amber-400', 'bg-slate-800/90', 'glow-amber');
+          card.classList.remove('border-slate-800', 'bg-slate-900/60');
+        } else {
+          card.classList.remove('border-amber-400', 'bg-slate-800/90', 'glow-amber');
+          card.classList.add('border-slate-800', 'bg-slate-900/60');
+        }
+      });
+    }
+
+    /* =========================================================================
+       6. RIGHT TAB SWITCHING & MODES
+       ========================================================================= */
+    function switchRightTab(tabId) {
+      const tabs = ['learn', 'convention', 'challenge'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`tabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        const content = document.getElementById(`tabContent${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        
+        if (t === tabId) {
+          btn.classList.add('bg-cyan-950', 'border-cyan-800/80', 'text-cyan-300');
+          btn.classList.remove('text-slate-400');
+          content.classList.remove('hidden');
+        } else {
+          btn.classList.remove('bg-cyan-950', 'border-cyan-800/80', 'text-cyan-300');
+          btn.classList.add('text-slate-400');
+          content.classList.add('hidden');
+        }
+      });
+    }
+
+    function switchLabMode(mode) {
+      state.mode = mode;
+      
+      const modes = ['standard', 'beginner', 'challenge'];
+      modes.forEach(m => {
+        const btn = document.getElementById(`mode${m.charAt(0).toUpperCase() + m.slice(1)}Btn`);
+        if (m === mode) {
+          btn.classList.add('bg-cyan-500', 'text-slate-950', 'font-semibold', 'shadow');
+          btn.classList.remove('text-slate-400');
+        } else {
+          btn.classList.remove('bg-cyan-500', 'text-slate-950', 'font-semibold', 'shadow');
+          btn.classList.add('text-slate-400');
+        }
+      });
+
+      if (mode === 'beginner') {
+        switchRightTab('learn');
+      } else if (mode === 'challenge') {
+        switchRightTab('challenge');
+        if (!state.currentQuiz) generateNewQuizQuestion();
+      }
+    }
+
+    /* =========================================================================
+       7. CHALLENGE / TEST YOURSELF QUIZ GENERATOR
+       ========================================================================= */
+    const quizProblems = [
+      {
+        v: 24, r1: 4, r2: 8, r3: 12,
+        target: 'r2',
+        question: "A 24V battery is connected in series with resistors R₁ = 4Ω, R₂ = 8Ω, and R₃ = 12Ω. What is the voltage drop across the 8Ω resistor?",
+        calcExplanation: "Total resistance R_tot = 4 + 8 + 12 = 24Ω. Current I = 24V / 24Ω = 1.0A. Therefore, V(8Ω) = I × R = 1.0A × 8Ω = 8.0V."
+      },
+      {
+        v: 18, r1: 3, r2: 6, r3: 9,
+        target: 'r1',
+        question: "An 18V source drives current through 3Ω, 6Ω, and 9Ω resistors in a single closed loop. What is the potential difference across the 3Ω resistor?",
+        calcExplanation: "Total resistance R_tot = 3 + 6 + 9 = 18Ω. Current I = 18V / 18Ω = 1.0A. Voltage drop V₁ = 1.0A × 3Ω = 3.0V."
+      },
+      {
+        v: 30, r1: 5, r2: 10, r3: 15,
+        target: 'r3',
+        question: "In a series loop with a 30V battery and resistors 5Ω, 10Ω, and 15Ω, what is the voltage drop across the 15Ω resistor?",
+        calcExplanation: "Total R = 5 + 10 + 15 = 30Ω. Current I = 30V / 30Ω = 1A. Voltage drop V₃ = 1A × 15Ω = 15.0V."
+      },
+      {
+        v: 12, r1: 2, r2: 4, r3: 6,
+        target: 'sum',
+        question: "If a loop has a 12V battery and three resistors with drops of 2V, 4V, and 6V, what is the algebraic sum of all potential differences (ΣV) around the loop?",
+        calcExplanation: "By Kirchhoff's Second Law (KVL), the algebraic sum of all voltage rises and drops around any closed loop is ALWAYS strictly 0V (+12 - 2 - 4 - 6 = 0V)."
+      }
+    ];
+
+    let currentQuizIndex = 0;
+
+    function generateNewQuizQuestion() {
+      const q = quizProblems[currentQuizIndex % quizProblems.length];
+      currentQuizIndex++;
+      state.currentQuiz = q;
+
+      document.getElementById('quizQuestionText').textContent = q.question;
+
+      // Calculate correct answer
+      let correctVal = 0;
+      if (q.target === 'r1') correctVal = (q.v / (q.r1 + q.r2 + q.r3)) * q.r1;
+      else if (q.target === 'r2') correctVal = (q.v / (q.r1 + q.r2 + q.r3)) * q.r2;
+      else if (q.target === 'r3') correctVal = (q.v / (q.r1 + q.r2 + q.r3)) * q.r3;
+      else if (q.target === 'sum') correctVal = 0;
+
+      // Generate 4 multiple choice options
+      let answers = [];
+      answers.push({ text: `${correctVal.toFixed(1)} V`, isCorrect: true });
+      answers.push({ text: `${(correctVal + 4).toFixed(1)} V`, isCorrect: false });
+      answers.push({ text: `${Math.max(1, correctVal - 3).toFixed(1)} V`, isCorrect: false });
+      answers.push({ text: `${(correctVal * 2 || 6).toFixed(1)} V`, isCorrect: false });
+
+      // Shuffle options
+      answers.sort(() => Math.random() - 0.5);
+
+      const optionsContainer = document.getElementById('quizOptionsList');
+      optionsContainer.innerHTML = '';
+
+      answers.forEach(ans => {
+        const btn = document.createElement('button');
+        btn.className = 'w-full text-left px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-200 text-xs font-mono transition flex items-center justify-between';
+        btn.innerHTML = `<span>${ans.text}</span> <span class="text-slate-500 text-[10px]">Select</span>`;
+        btn.onclick = () => selectQuizAnswer(ans.isCorrect, q.calcExplanation, btn);
+        optionsContainer.appendChild(btn);
+      });
+
+      // Hide feedback box
+      const fbBox = document.getElementById('quizFeedbackBox');
+      fbBox.classList.add('hidden');
+    }
+
+    function selectQuizAnswer(isCorrect, explanation, selectedBtn) {
+      state.quizTotal++;
+      if (isCorrect) state.quizScore++;
+
+      document.getElementById('quizScore').textContent = `${state.quizScore} / ${state.quizTotal}`;
+
+      // Disable all option buttons
+      const options = document.getElementById('quizOptionsList').getElementsByTagName('button');
+      for (let btn of options) {
+        btn.disabled = true;
+        btn.classList.add('opacity-75');
+      }
+
+      const fbBox = document.getElementById('quizFeedbackBox');
+      fbBox.classList.remove('hidden');
+
+      if (isCorrect) {
+        selectedBtn.classList.add('bg-emerald-950', 'border-emerald-500', 'text-emerald-300');
+        fbBox.className = 'p-3 rounded-xl text-xs font-mono bg-emerald-950/60 border border-emerald-500/50 text-emerald-300 space-y-1';
+        fbBox.innerHTML = `
+          <div class="font-bold flex items-center gap-1.5">
+            <span>&check; CORRECT!</span>
+          </div>
+          <p class="text-[11px] text-emerald-200">${explanation}</p>
+        `;
+      } else {
+        selectedBtn.classList.add('bg-rose-950', 'border-rose-500', 'text-rose-300');
+        fbBox.className = 'p-3 rounded-xl text-xs font-mono bg-rose-950/60 border border-rose-500/50 text-rose-300 space-y-1';
+        fbBox.innerHTML = `
+          <div class="font-bold flex items-center gap-1.5">
+            <span>&cross; INCORRECT</span>
+          </div>
+          <p class="text-[11px] text-rose-200">${explanation}</p>
+        `;
+      }
+    }
+
+    /* =========================================================================
+       8. ANIMATION LOOP (RENDER & SIMULATION UPDATE)
+       ========================================================================= */
+    let lastTime = performance.now();
+
+    function animate(currentTime) {
+      requestAnimationFrame(animate);
+
+      const deltaTime = (currentTime - lastTime) * 0.001;
+      lastTime = currentTime;
+
+      // 1. Orbit controls update
+      if (controls) controls.update();
+
+      // 2. Electron Particle Flow along the wire loop
+      if (state.particlesEnabled && electronParticles.length > 0) {
+        // Base flow speed proportional to current I
+        const flowSpeed = (state.current * 0.045 * state.simSpeed) * (state.loopDirection === 'CW' ? 1 : -1);
+        
+        electronParticles.forEach(p => {
+          p.t = (p.t + flowSpeed * deltaTime + 1.0) % 1.0;
+          p.mesh.position.copy(getPointOnLoop(p.t));
+        });
+      }
+
+      // 3. Walk Around the Loop Marker update
+      if (walkMarker) {
+        if (state.isWalking) {
+          const stepSpeed = state.walkSpeed * state.simSpeed;
+          state.walkProgress = (state.walkProgress + stepSpeed) % 1.0;
+          updateWalkUI(state.walkProgress);
+          drawPotentialProfile();
+        }
+
+        // Place marker at current walk progress
+        const targetPos = getPointOnLoop(state.walkProgress);
+        walkMarker.position.x = targetPos.x;
+        walkMarker.position.z = targetPos.z;
+        walkMarker.position.y = targetPos.y + 0.4 + Math.sin(currentTime * 0.005) * 0.08;
+
+        if (walkMarkerGlow) {
+          walkMarkerGlow.rotation.y += 0.02;
+          walkMarkerGlow.rotation.z += 0.01;
+        }
+      }
+
+      // 4. Subtle pulsating glowing elements
+      if (componentMeshes.battery && componentMeshes.battery.ringMat) {
+        componentMeshes.battery.ringMat.emissiveIntensity = 0.5 + Math.sin(currentTime * 0.003) * 0.2;
+      }
+
+      // 5. Render Scene
+      if (renderer && scene && camera) {
+        renderer.render(scene, camera);
+      }
+    }
+
+    /* =========================================================================
+       9. INITIALIZATION
+       ========================================================================= */
+    window.addEventListener('DOMContentLoaded', () => {
+      initThreeScene();
+      calculateCircuitPhysics();
+      generateNewQuizQuestion();
+      animate(performance.now());
+    });
+  </script>
+</body>
+</html>
