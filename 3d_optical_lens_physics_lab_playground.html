@@ -252,6 +252,13 @@
 
         <!-- Top Header Action Controls -->
         <div class="flex items-center gap-1.5 shrink-0">
+            <!-- Challenge & Quiz Modal Trigger -->
+            <button onclick="toggleChallengeModal()" class="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500/20 to-cyan-500/20 hover:from-amber-500/30 hover:to-cyan-500/30 text-amber-300 hover:text-amber-200 border border-amber-500/40 hover:border-amber-400/60 transition shrink-0 shadow-sm shadow-amber-500/10 active:scale-95" title="Open Interactive Lab Challenges & Quiz">
+                <i class="ph-fill ph-trophy text-amber-400 text-sm"></i>
+                <span>Challenge &amp; Quiz</span>
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-amber-500/30 text-amber-200 border border-amber-400/40 hidden sm:inline">10+10</span>
+            </button>
+
             <!-- Full 3D View Nav Button -->
             <button onclick="toggleFull3D()" id="btn-nav-full3d" class="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition" title="Toggle Full 3D Visual (Hide/Show side cards)">
                 <i class="ph-bold ph-arrows-out-simple text-cyan-400 text-sm"></i>
@@ -420,6 +427,20 @@
                         <button id="obj-candle" onclick="setObjectModel('candle')" class="px-2.5 py-1 rounded text-xs font-medium bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">Candle</button>
                         <button id="obj-arrow" onclick="setObjectModel('arrow')" class="px-2.5 py-1 rounded text-xs font-medium text-gray-400 hover:text-gray-200">Glowing Arrow</button>
                     </div>
+                </div>
+
+                <!-- Challenge & Quiz Entry Banner in Sidebar -->
+                <div class="bg-gradient-to-br from-amber-950/40 via-gray-950 to-cyan-950/30 border border-amber-500/30 rounded-xl p-3.5 space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                            <i class="ph-fill ph-trophy text-amber-400"></i> Practice Center
+                        </span>
+                        <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-200 border border-amber-400/30">10 + 10</span>
+                    </div>
+                    <p class="text-[11px] text-gray-300 leading-relaxed">Solve 10 optical challenges with step-by-step 3D testing and test your concepts with a 10-question master quiz!</p>
+                    <button onclick="toggleChallengeModal()" class="w-full py-2 px-3 rounded-lg bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-gray-950 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition shadow-lg shadow-amber-500/20 active:scale-95">
+                        <i class="ph-bold ph-lightning"></i> Open Challenges &amp; Quiz
+                    </button>
                 </div>
 
             </div>
@@ -596,6 +617,13 @@
                     </div>
                 </div>
 
+                <!-- Take Quiz / Test Knowledge Trigger Button -->
+                <button onclick="toggleChallengeModal('quiz')" class="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-cyan-500/15 via-blue-500/15 to-purple-500/15 hover:from-cyan-500/25 hover:to-purple-500/25 border border-cyan-500/30 hover:border-cyan-400/50 text-cyan-300 hover:text-white font-semibold text-xs flex items-center justify-center gap-2 transition active:scale-95 shadow-sm">
+                    <i class="ph-fill ph-brain text-cyan-400 text-sm"></i>
+                    <span>Take Optics Concept Quiz</span>
+                    <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-200">10 Qs</span>
+                </button>
+
             </div>
         </aside>
     </div>
@@ -673,6 +701,212 @@
                 </button>
             </div>
         </div>
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- CHALLENGE & QUIZ MODE MODAL                                    -->
+    <!-- ============================================================== -->
+    <div id="challenge-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden items-center justify-center p-3 sm:p-5">
+        <div class="glass-card p-4 sm:p-6 rounded-3xl max-w-2xl w-full border border-amber-500/40 shadow-2xl flex flex-col max-h-[92vh] text-gray-200 animate-in fade-in zoom-in duration-200">
+            
+            <!-- Top Modal Header -->
+            <div class="flex items-start justify-between pb-3 border-b border-gray-800/80 gap-3 shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500/20 to-cyan-500/20 border border-amber-400/50 flex items-center justify-center text-amber-300 font-mono font-bold text-lg shadow-[0_0_15px_rgba(245,158,11,0.25)] shrink-0">
+                        <i class="ph-fill ph-trophy text-amber-400 text-xl"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h2 class="text-sm sm:text-base font-bold text-white tracking-tight">OpticsLab 3D Mastery Center</h2>
+                            <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30">10 Challenges + 10 Quizzes</span>
+                        </div>
+                        <p class="text-xs text-gray-400">Master geometric optics, ray tracing, and the thin lens equation with hands-on practice</p>
+                    </div>
+                </div>
+                <button onclick="toggleChallengeModal()" class="w-8 h-8 rounded-xl bg-gray-800/80 border border-gray-700 flex items-center justify-center text-gray-400 hover:text-white hover:border-gray-500 transition active:scale-95" title="Close Modal">
+                    <i class="ph-bold ph-x text-sm"></i>
+                </button>
+            </div>
+
+            <!-- Mode Tab Selector -->
+            <div class="flex items-center gap-2 pt-3 pb-2 shrink-0">
+                <button id="tab-btn-challenge" onclick="switchChallengeTab('challenge')" class="flex-1 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition bg-amber-500/20 text-amber-300 border border-amber-400/50 shadow-sm">
+                    <i class="ph-bold ph-crosshair text-amber-400"></i>
+                    <span>⚡ Optical Bench Challenges</span>
+                    <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/30 text-amber-200">10</span>
+                </button>
+                <button id="tab-btn-quiz" onclick="switchChallengeTab('quiz')" class="flex-1 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition bg-gray-900/60 text-gray-400 border border-gray-800 hover:text-white hover:border-gray-700">
+                    <i class="ph-bold ph-brain text-cyan-400"></i>
+                    <span>🧠 Concept Master Quiz</span>
+                    <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-gray-800 text-gray-300">10</span>
+                </button>
+            </div>
+
+            <!-- Modal Body (Scrollable) -->
+            <div class="overflow-y-auto custom-scroll pr-1 flex-1 py-2 space-y-4">
+                
+                <!-- ================= TAB 1: OPTICAL BENCH CHALLENGES ================= -->
+                <div id="view-challenges" class="space-y-4">
+                    
+                    <!-- Challenge Subheader & Progress Pills -->
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between text-xs">
+                            <div class="flex items-center gap-2">
+                                <span class="text-gray-400 font-mono">Challenge <span id="ch-q-num" class="text-amber-400 font-bold">1</span> of 10</span>
+                                <span id="ch-category-badge" class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-400/30">Convex: Real Image</span>
+                            </div>
+                            <span id="ch-solved-counter" class="font-mono text-[11px] text-gray-400">Solved: <span class="text-emerald-400 font-bold" id="ch-solved-num">0</span> / 10</span>
+                        </div>
+
+                        <!-- 10 Question Pill Selectors -->
+                        <div id="ch-progress-bar" class="grid grid-cols-10 gap-1.5">
+                            <!-- Dynamically generated pills 1-10 -->
+                        </div>
+                    </div>
+
+                    <!-- Challenge Prompt Box -->
+                    <div class="bg-gray-950/80 p-4 rounded-2xl border border-gray-800/90 space-y-2.5">
+                        <div class="text-xs uppercase font-mono tracking-wider text-amber-400 font-bold flex items-center gap-1.5">
+                            <i class="ph-fill ph-target"></i> Objective
+                        </div>
+                        <div class="text-sm font-medium text-white leading-relaxed" id="ch-prompt">
+                            <!-- Prompt text injected via JS -->
+                        </div>
+                        
+                        <!-- Context Formula Banner -->
+                        <div id="ch-schema-bar" class="text-xs font-mono text-cyan-300 bg-cyan-950/40 px-3 py-2 rounded-xl border border-cyan-800/50 flex items-center gap-2">
+                            <span class="text-cyan-400 font-bold shrink-0">Optics Rule:</span>
+                            <span id="ch-schema-text" class="text-gray-200">1/f = 1/v - 1/u</span>
+                        </div>
+                    </div>
+
+                    <!-- Input, Check Answer & Hint Toggle -->
+                    <div class="space-y-2">
+                        <div class="flex items-center gap-2">
+                            <div class="relative flex-1">
+                                <input id="ch-input" type="number" step="0.01" placeholder="Enter your answer (e.g. 12.0)" onkeydown="if(event.key==='Enter') checkChallengeAnswer()" class="w-full bg-gray-950 border border-gray-700 focus:border-amber-400 rounded-xl px-4 py-2.5 font-mono text-sm text-white focus:outline-none focus:ring-1 focus:ring-amber-400 transition placeholder:text-gray-600">
+                                <span id="ch-unit-label" class="absolute right-3.5 top-1/2 -translate-y-1/2 font-mono text-xs text-gray-400 font-bold">cm</span>
+                            </div>
+                            <button onclick="checkChallengeAnswer()" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-amber-500/20 active:scale-95 shrink-0">
+                                Check
+                            </button>
+                            <button onclick="toggleChallengeHint()" class="px-3.5 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-amber-300 hover:text-white border border-amber-500/30 font-semibold text-xs transition active:scale-95 shrink-0" title="Show Helpful Hint">
+                                💡 Hint
+                            </button>
+                        </div>
+
+                        <!-- Hint Box (Toggled) -->
+                        <div id="ch-hint-box" class="hidden rounded-xl p-3 text-xs bg-amber-950/40 border border-amber-400/40 text-amber-200 leading-relaxed">
+                            <!-- Injected hint text -->
+                        </div>
+
+                        <!-- Result Feedback Box -->
+                        <div id="ch-feedback" class="hidden rounded-xl p-3.5 text-xs space-y-1.5 animate-in fade-in duration-150">
+                            <!-- Injected feedback -->
+                        </div>
+                    </div>
+
+                    <!-- Bottom Navigation & 3D Lab Preset Loader -->
+                    <div class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-gray-800/80">
+                        <button onclick="loadChallengeInto3D()" class="px-3.5 py-2 rounded-xl text-xs font-semibold text-cyan-300 hover:text-white bg-cyan-950/50 hover:bg-cyan-900/70 border border-cyan-400/40 flex items-center gap-1.5 transition active:scale-95 shadow-sm">
+                            <i class="ph-bold ph-cube text-cyan-400"></i>
+                            <span>⚡ Load in 3D Lab &amp; Test</span>
+                        </button>
+                        <div class="flex items-center gap-2">
+                            <button onclick="prevChallenge()" class="px-3.5 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-semibold border border-gray-700 transition">← Prev</button>
+                            <button onclick="nextChallenge()" class="px-3.5 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-semibold border border-gray-700 transition">Next →</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================= TAB 2: CONCEPTUAL MASTER QUIZ ================= -->
+                <div id="view-quiz" class="hidden space-y-4">
+                    
+                    <!-- Quiz Subheader & Score HUD -->
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between text-xs">
+                            <div class="flex items-center gap-2">
+                                <span class="text-gray-400 font-mono">Question <span id="qz-q-num" class="text-cyan-400 font-bold">1</span> of 10</span>
+                                <span id="qz-concept-badge" class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-purple-500/20 text-purple-300 border border-purple-400/30">Sign Convention</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-mono text-[11px] text-gray-400">Score: <span id="qz-score-num" class="text-emerald-400 font-bold">0</span> / 10</span>
+                                <span id="qz-accuracy-badge" class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-300">0%</span>
+                            </div>
+                        </div>
+
+                        <!-- 10 Quiz Question Pills -->
+                        <div id="qz-progress-bar" class="grid grid-cols-10 gap-1.5">
+                            <!-- Dynamically generated pills 1-10 -->
+                        </div>
+                    </div>
+
+                    <!-- Main Quiz Question Container -->
+                    <div id="qz-card-question" class="space-y-3.5">
+                        <!-- Question Prompt Card -->
+                        <div class="bg-gray-950/80 p-4 rounded-2xl border border-gray-800/90">
+                            <div class="text-xs uppercase font-mono tracking-wider text-cyan-400 font-bold mb-1.5 flex items-center gap-1.5">
+                                <i class="ph-fill ph-sparkle text-cyan-400"></i> Conceptual Physics Question
+                            </div>
+                            <div id="qz-question-text" class="text-sm font-semibold text-white leading-relaxed">
+                                <!-- Question injected via JS -->
+                            </div>
+                        </div>
+
+                        <!-- 4 Multiple Choice Options (A, B, C, D) -->
+                        <div id="qz-options-container" class="space-y-2">
+                            <!-- Injected options -->
+                        </div>
+
+                        <!-- Rich Concept & Misconception Breakdown (appears on answer) -->
+                        <div id="qz-explanation-box" class="hidden rounded-2xl p-4 text-xs space-y-2 animate-in fade-in duration-200">
+                            <!-- Injected concept breakdown -->
+                        </div>
+
+                        <!-- Quiz Navigation -->
+                        <div class="flex items-center justify-between pt-3 border-t border-gray-800/80">
+                            <button onclick="prevQuizQuestion()" class="px-3.5 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-semibold border border-gray-700 transition">← Prev Question</button>
+                            <div class="flex items-center gap-2">
+                                <button id="qz-btn-next" onclick="nextQuizQuestion()" class="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-gray-950 text-xs font-bold transition shadow-lg shadow-cyan-500/20 active:scale-95">Next Question →</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quiz Completion / Mastery Summary Screen (Initially Hidden) -->
+                    <div id="qz-summary-screen" class="hidden bg-gray-950/90 p-6 rounded-2xl border border-emerald-400/40 text-center space-y-4">
+                        <div class="w-16 h-16 mx-auto rounded-3xl bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-3xl shadow-[0_0_25px_rgba(16,185,129,0.4)]">
+                            🏆
+                        </div>
+                        <div>
+                            <div id="qz-summary-rank" class="text-lg font-bold text-white tracking-tight">Optics Grandmaster 🔭</div>
+                            <div id="qz-summary-score" class="text-sm font-mono text-emerald-400 font-semibold mt-1">You scored 10 out of 10 (100%)</div>
+                            <p id="qz-summary-desc" class="text-xs text-gray-300 mt-2 max-w-md mx-auto leading-relaxed">Outstanding mastery! You have a rock-solid conceptual understanding of geometric optics, ray tracing conventions, real vs virtual imaging, and optical power.</p>
+                        </div>
+                        
+                        <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
+                            <button onclick="restartQuiz()" class="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/20 active:scale-95">
+                                Retake Quiz
+                            </button>
+                            <button onclick="reviewQuizQuestions()" class="px-4 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-200 font-semibold text-xs border border-gray-700 transition">
+                                Review Explanations
+                            </button>
+                            <button onclick="switchChallengeTab('challenge')" class="px-4 py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-semibold text-xs border border-amber-400/40 transition">
+                                ⚡ Try Bench Challenges
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- FLOATING TOAST NOTIFICATION -->
+    <div id="toast-notify" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 glass-card px-4 py-2.5 rounded-2xl border border-cyan-400/50 bg-gray-900/95 text-cyan-200 text-xs font-semibold flex items-center gap-2 shadow-2xl transition-all duration-300 pointer-events-none opacity-0 translate-y-4">
+        <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+        <span id="toast-text">Parameters loaded into 3D Lab!</span>
     </div>
 
     <!-- Application Logic & Three.js 3D Engine -->
@@ -1981,9 +2215,21 @@
             requestAnimationFrame(frame);
         }
 
-        // Keyboard shortcuts: '[' for Left Panel, ']' for Right Panel, 'f' for Full 3D
+        // Keyboard shortcuts: '[' for Left Panel, ']' for Right Panel, 'f' for Full 3D, 'Escape' to close modals
         window.addEventListener('keydown', (e) => {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            if (e.key === 'Escape') {
+                const chModal = document.getElementById('challenge-modal');
+                if (chModal && !chModal.classList.contains('hidden')) {
+                    toggleChallengeModal();
+                    return;
+                }
+                const guideModal = document.getElementById('guide-modal');
+                if (guideModal && !guideModal.classList.contains('hidden')) {
+                    toggleGuideModal();
+                    return;
+                }
+            }
             if (e.key === '[' || e.key === '{') {
                 toggleLeftPanel();
             } else if (e.key === ']' || e.key === '}') {
@@ -2003,6 +2249,770 @@
             updateFloatingLabels();
         }
 
+        // ==========================================
+        // 11. TOAST NOTIFICATION HELPER
+        // ==========================================
+        let toastTimeout = null;
+        function showToast(message) {
+            const toast = document.getElementById('toast-notify');
+            const text = document.getElementById('toast-text');
+            if (!toast || !text) return;
+            text.textContent = message;
+            toast.classList.remove('opacity-0', 'translate-y-4');
+            toast.classList.add('opacity-100', 'translate-y-0');
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'translate-y-4');
+            }, 3200);
+        }
+
+        // ==========================================
+        // 12. CHALLENGE & QUIZ DATA DEFINITIONS
+        // ==========================================
+        const challengesData = [
+            {
+                id: 1,
+                category: "Convex: Real Image Distance",
+                prompt: "A glowing candle object is placed at <b class='text-emerald-400 font-mono'>u = -12.0 cm</b> in front of a converging convex lens with focal length <b class='text-amber-400 font-mono'>f = +6.0 cm</b>. Use the Thin Lens Equation to calculate the exact image distance <b class='text-cyan-400 font-mono'>v</b> in cm.",
+                formula: "1/f = 1/v - 1/u  ⇒  1/v = 1/f + 1/u",
+                hint: "Substitute f = +6.0 and u = -12.0 into 1/v = 1/6 - 1/12 = 2/12 - 1/12 = 1/12. Invert to determine v.",
+                unit: "cm",
+                answer: 12.0,
+                tolerance: 0.25,
+                solution: "<b>Step-by-step Solution:</b><br>1/v = 1/f + 1/u = 1/(+6.0) + 1/(-12.0) = 2/12.0 - 1/12.0 = 1/12.0<br>⇒ <b class='text-cyan-300'>v = +12.00 cm</b>.<br>Since v > 0, the refracted light rays converge on the opposite side to form a real, inverted image at exactly 12 cm from the lens.",
+                preset: { lensType: 'convex', focalMag: 6.0, objectDistMag: 12.0, objectHeight: 3.0 }
+            },
+            {
+                id: 2,
+                category: "1:1 Symmetry (Photocopier)",
+                prompt: "You need to produce a real image that is <b class='text-purple-300 font-mono'>exactly the same height</b> as the object (|m| = 1.00×) using a convex lens of focal length <b class='text-amber-400 font-mono'>f = +5.0 cm</b>. At what distance magnitude <b class='text-emerald-400 font-mono'>|u|</b> (in cm) must the object be positioned from the lens?",
+                formula: "For |m| = 1.00 in a single lens, |u| = v = 2f",
+                hint: "Symmetric equal-size imaging occurs when the object is located at exactly twice the focal distance (2F₁). Multiply focal length by 2.",
+                unit: "cm",
+                answer: 10.0,
+                tolerance: 0.2,
+                solution: "<b>Step-by-step Solution:</b><br>For linear magnification |m| = |v/u| = 1.00, we have v = -u = |u|.<br>Substituting into 1/f = 1/|u| - 1/(-|u|) = 2/|u| ⇒ <b class='text-emerald-300'>|u| = 2f = 2 × 5.0 cm = 10.00 cm</b>.<br>At u = -10.0 cm, v = +10.0 cm, giving magnification m = v/u = -1.00 (same size, inverted).",
+                preset: { lensType: 'convex', focalMag: 5.0, objectDistMag: 10.0, objectHeight: 3.0 }
+            },
+            {
+                id: 3,
+                category: "Magnifying Glass (Virtual Image)",
+                prompt: "A student inspects a microchip by placing it at <b class='text-emerald-400 font-mono'>u = -4.0 cm</b> inside the focal length of a magnifying convex lens (<b class='text-amber-400 font-mono'>f = +6.0 cm</b>). Calculate the image distance <b class='text-cyan-400 font-mono'>v</b> in cm. <span class='text-amber-300 text-xs'>(Remember: enter with a negative sign for virtual images!)</span>",
+                formula: "1/v = 1/f + 1/u = 1/(+6.0) + 1/(-4.0)",
+                hint: "1/v = 1/6 - 1/4 = 2/12 - 3/12 = -1/12. Because the object is placed inside the focal point (|u| < f), refracted rays diverge and trace backward to form a virtual image on the same side.",
+                unit: "cm",
+                answer: -12.0,
+                tolerance: 0.3,
+                solution: "<b>Step-by-step Solution:</b><br>1/v = 1/6.0 - 1/4.0 = (2 - 3)/12.0 = -1/12.0<br>⇒ <b class='text-cyan-300'>v = -12.00 cm</b>.<br>The negative sign confirms a virtual, upright image formed 12.0 cm behind the lens on the same side as the object, with magnification m = (-12)/(-4) = +3.00×!",
+                preset: { lensType: 'convex', focalMag: 6.0, objectDistMag: 4.0, objectHeight: 2.2 }
+            },
+            {
+                id: 4,
+                category: "Concave Diverging Lens Distance",
+                prompt: "A diverging concave lens has focal length <b class='text-purple-400 font-mono'>f = -6.0 cm</b>. An illuminated arrow is placed at <b class='text-emerald-400 font-mono'>u = -12.0 cm</b>. What is the image distance <b class='text-cyan-400 font-mono'>v</b> in cm? <span class='text-amber-300 text-xs'>(Include the negative sign!)</span>",
+                formula: "1/v = 1/f + 1/u = 1/(-6.0) + 1/(-12.0)",
+                hint: "Both f and u are negative: 1/v = -1/6 - 1/12 = -2/12 - 1/12 = -3/12 = -1/4.",
+                unit: "cm",
+                answer: -4.0,
+                tolerance: 0.2,
+                solution: "<b>Step-by-step Solution:</b><br>1/v = -1/6.0 - 1/12.0 = -3/12.0 = -1/4.0<br>⇒ <b class='text-cyan-300'>v = -4.00 cm</b>.<br>A concave lens always diverges parallel rays away from the near focus, producing a virtual, upright, diminished image located between the lens and F₁.",
+                preset: { lensType: 'concave', focalMag: 6.0, objectDistMag: 12.0, objectHeight: 3.5 }
+            },
+            {
+                id: 5,
+                category: "Linear Magnification",
+                prompt: "A convex lens with <b class='text-amber-400 font-mono'>f = +4.0 cm</b> forms a real image of an object placed at <b class='text-emerald-400 font-mono'>u = -6.0 cm</b>. Calculate the linear magnification <b class='text-purple-300 font-mono'>m = v / u</b>. <span class='text-amber-300 text-xs'>(Include negative sign if inverted!)</span>",
+                formula: "1/v = 1/f + 1/u  ⇒  find v; then m = v / u",
+                hint: "First find v: 1/v = 1/4 - 1/6 = 3/12 - 2/12 = 1/12 ⇒ v = +12.0 cm. Then compute m = (+12.0) / (-6.0).",
+                unit: "×",
+                answer: -2.0,
+                tolerance: 0.15,
+                solution: "<b>Step-by-step Solution:</b><br>1/v = 1/4.0 - 1/6.0 = 1/12.0  ⇒  v = +12.00 cm.<br>Magnification m = v / u = (+12.00) / (-6.00) = <b class='text-purple-300'>-2.00×</b>.<br>The negative sign indicates the image is inverted, and |m| = 2.00 means the image is twice as large as the original object.",
+                preset: { lensType: 'convex', focalMag: 4.0, objectDistMag: 6.0, objectHeight: 2.5 }
+            },
+            {
+                id: 6,
+                category: "Optical Power (Diopters)",
+                prompt: "An optometrist tests a converging convex lens with focal length <b class='text-amber-400 font-mono'>f = +5.0 cm</b>. Calculate the optical refractive power <b class='text-cyan-400 font-mono'>P</b> of this lens in Diopters (D).",
+                formula: "P (Diopters) = 1 / f(in meters) = 100 / f(in cm)",
+                hint: "Convert 5.0 cm to meters: 5.0 cm = 0.05 m. Power P = 1 / 0.05 = 100 / 5.",
+                unit: "D",
+                answer: 20.0,
+                tolerance: 0.25,
+                solution: "<b>Step-by-step Solution:</b><br>Focal length in meters: f = 5.0 cm / 100 = +0.050 m.<br>Optical power P = 1 / f = 1 / 0.050 = <b class='text-cyan-300'>+20.00 D (Diopters)</b>.<br>Shorter focal lengths bend light more acutely and therefore have greater optical power.",
+                preset: { lensType: 'convex', focalMag: 5.0, objectDistMag: 12.0, objectHeight: 3.0 }
+            },
+            {
+                id: 7,
+                category: "Projector Mode: Image Height",
+                prompt: "A cinema slide projector lens has <b class='text-amber-400 font-mono'>f = +5.0 cm</b>. An illuminated film frame of height <b class='text-blue-400 font-mono'>h₀ = +2.0 cm</b> is placed at <b class='text-emerald-400 font-mono'>u = -7.5 cm</b>. Calculate the resulting image height <b class='text-purple-400 font-mono'>hᵢ</b> on the projection screen in cm. <span class='text-amber-300 text-xs'>(Enter with negative sign for inverted!)</span>",
+                formula: "1/v = 1/f + 1/u  ⇒  m = v/u  ⇒  hᵢ = m × h₀",
+                hint: "1/v = 1/5 - 1/7.5 = 1/15 ⇒ v = +15.0 cm. Linear magnification m = 15 / (-7.5) = -2.0. Then hᵢ = -2.0 × 2.0 cm.",
+                unit: "cm",
+                answer: -4.0,
+                tolerance: 0.2,
+                solution: "<b>Step-by-step Solution:</b><br>1/v = 1/5.0 - 1/7.5 = 3/15.0 - 2/15.0 = 1/15.0  ⇒  v = +15.00 cm.<br>Magnification m = v / u = (+15.00) / (-7.50) = -2.00.<br>Image height hᵢ = m × h₀ = (-2.00) × (+2.0 cm) = <b class='text-purple-300'>-4.00 cm</b>.<br>The slide appears upside down and magnified on the screen.",
+                preset: { lensType: 'convex', focalMag: 5.0, objectDistMag: 7.5, objectHeight: 2.0 }
+            },
+            {
+                id: 8,
+                category: "Concave Peephole Magnification",
+                prompt: "A front door peephole diverging lens has focal length <b class='text-purple-400 font-mono'>f = -5.0 cm</b>. A visitor stands outside at distance <b class='text-emerald-400 font-mono'>u = -5.0 cm</b>. What is the magnification <b class='text-cyan-400 font-mono'>m = v / u</b> of the visitor's image?",
+                formula: "1/v = 1/f + 1/u = -1/5 - 1/5 = -2/5  ⇒  v = -2.5 cm;  m = v/u",
+                hint: "First find v: 1/v = -0.2 - 0.2 = -0.4 ⇒ v = -2.5 cm. Then m = (-2.5) / (-5.0).",
+                unit: "×",
+                answer: 0.5,
+                tolerance: 0.05,
+                solution: "<b>Step-by-step Solution:</b><br>1/v = -1/5.0 - 1/5.0 = -2/5.0  ⇒  v = -2.50 cm.<br>Magnification m = v / u = (-2.50) / (-5.00) = <b class='text-cyan-300'>+0.50×</b>.<br>The visitor appears upright (+m) and diminished to exactly half height, allowing a wide field of view through the door security lens.",
+                preset: { lensType: 'concave', focalMag: 5.0, objectDistMag: 5.0, objectHeight: 3.0 }
+            },
+            {
+                id: 9,
+                category: "Camera Mode: Sensor Distance",
+                prompt: "In a camera, the lens has <b class='text-amber-400 font-mono'>f = +3.0 cm</b>. A distant tree is positioned at <b class='text-emerald-400 font-mono'>u = -15.0 cm</b>. At what distance <b class='text-cyan-400 font-mono'>v</b> in cm must the image sensor be positioned behind the lens to focus the shot?",
+                formula: "1/v = 1/f + 1/u = 1/(+3.0) + 1/(-15.0)",
+                hint: "1/v = 1/3 - 1/15 = 5/15 - 1/15 = 4/15. Invert: v = 15 / 4 = 3.75 cm.",
+                unit: "cm",
+                answer: 3.75,
+                tolerance: 0.15,
+                solution: "<b>Step-by-step Solution:</b><br>1/v = 1/3.0 - 1/15.0 = 5/15.0 - 1/15.0 = 4/15.0<br>⇒ <b class='text-cyan-300'>v = 15/4 = +3.75 cm</b>.<br>When an object is far beyond 2f (|u| > 2f), the image forms just slightly past the principal focus F₂ (between F₂ and 2F₂), diminished and real.",
+                preset: { lensType: 'convex', focalMag: 3.0, objectDistMag: 15.0, objectHeight: 4.0 }
+            },
+            {
+                id: 10,
+                category: "Conjugate Foci: Finding Focal Length",
+                prompt: "In an optical bench alignment, an illuminated pin at <b class='text-emerald-400 font-mono'>u = -9.0 cm</b> casts a sharp inverted image on a screen at <b class='text-cyan-400 font-mono'>v = +18.0 cm</b> on the other side. Calculate the focal length <b class='text-amber-400 font-mono'>f</b> of this convex lens in cm.",
+                formula: "1/f = 1/v - 1/u = 1/(+18.0) - 1/(-9.0)",
+                hint: "1/f = 1/18 - (-1/9) = 1/18 + 2/18 = 3/18 = 1/6. Invert to get f.",
+                unit: "cm",
+                answer: 6.0,
+                tolerance: 0.2,
+                solution: "<b>Step-by-step Solution:</b><br>1/f = 1/v - 1/u = 1/18.0 - (-1/9.0) = 1/18.0 + 2/18.0 = 3/18.0 = 1/6.0<br>⇒ <b class='text-amber-300'>f = +6.00 cm</b>.<br>The positive sign confirms a converging convex lens with focal points at ±6.0 cm.",
+                preset: { lensType: 'convex', focalMag: 6.0, objectDistMag: 9.0, objectHeight: 3.0 }
+            }
+        ];
+
+        const quizData = [
+            {
+                id: 1,
+                category: "Sign Convention",
+                question: "According to the New Cartesian Sign Convention, why is the focal length of a concave (diverging) lens mathematically defined as negative (−)?",
+                options: [
+                    "Because a concave lens is physically thinner at its geometric center than at its edges.",
+                    "Because parallel incident rays diverge outward, and their backward extensions intersect at the virtual focal point F₁ on the incident (left) side of the lens.",
+                    "Because light rays travel from right to left through diverging materials.",
+                    "Because concave lenses can only form inverted images."
+                ],
+                correctIndex: 1,
+                explanation: {
+                    correctWhy: "When parallel light strikes a concave lens from the left, refracted rays diverge outward. Tracing these diverging rays backward locates the focus F₁ on the negative X-axis (left of optical center O). Distances measured opposite to incident light direction are assigned negative values.",
+                    pitfall: "Do not confuse lens thickness with Cartesian coordinates. The physical shape explains why refraction diverges light, but the minus sign is strictly due to the coordinate origin at O with leftwards positions being negative."
+                }
+            },
+            {
+                id: 2,
+                category: "Real vs Virtual Images",
+                question: "What is the fundamental physical distinction between a Real optical image and a Virtual optical image?",
+                options: [
+                    "Real images are always upright, whereas virtual images are always upside down.",
+                    "Real images are formed where refracted rays physically intersect and can be caught on a screen; virtual images occur where diverging rays only appear to intersect when traced backward.",
+                    "Real images can only be formed by mirrors, while lenses can only create virtual images.",
+                    "Virtual images cannot be seen by the human eye or focused by optical instruments."
+                ],
+                correctIndex: 1,
+                explanation: {
+                    correctWhy: "Real images concentrate actual photon flux at a physical location, so placing a screen, photopaper, or CCD sensor there captures the image. Virtual images have no photons intersecting at the image location; your eye's own cornea/lens must refocus those diverging rays onto your retina.",
+                    pitfall: "Students frequently assume virtual images 'cannot be seen.' In fact, whenever you look through a reading magnifying glass or into a bathroom mirror, you are seeing a virtual image clearly!"
+                }
+            },
+            {
+                id: 3,
+                category: "Ray Tracing Rules",
+                question: "Why does a principal ray passing through the optical center (O) of a thin lens continue forward undeviated?",
+                options: [
+                    "Because the refractive index of glass drops to 1.00 at the geometrical center.",
+                    "Because the front and back tangent surfaces at the optical center are virtually parallel, behaving like an infinitesimally thin rectangular glass plate with negligible lateral displacement.",
+                    "Because light accelerates to infinite speed through the center of a lens.",
+                    "Because the optical center absorbs all dispersion and chromatic aberration."
+                ],
+                correctIndex: 1,
+                explanation: {
+                    correctWhy: "At the optical center O of a thin lens, the tangent planes to both curved surfaces are mutually parallel. Passing through parallel faces produces zero angular deviation. In a thin lens, the minute lateral displacement is practically zero, so the ray travels in a straight line.",
+                    pitfall: "In thick lenses there is a slight parallel offset, but under the fundamental 'thin lens approximation' (thickness << radii of curvature), this offset is zero."
+                }
+            },
+            {
+                id: 4,
+                category: "Focal Point Physics",
+                question: "When an illuminated object is positioned exactly at the principal focus F₁ of a convex lens (|u| = f), where does the image form?",
+                options: [
+                    "At 2F₂ with identical size to the object.",
+                    "Between F₂ and 2F₂ on the opposite side.",
+                    "At infinity (∞), because the refracted light rays emerge strictly parallel to each other and never intersect.",
+                    "Directly inside the optical center O."
+                ],
+                correctIndex: 2,
+                explanation: {
+                    correctWhy: "By the reversibility of light: parallel incident rays converge to the focus, so rays radiating from the focus must refract parallel! In the Thin Lens Equation: 1/v = 1/f + 1/(-f) = 0, which means v → ∞.",
+                    pitfall: "This fundamental property is utilized in searchlights, lighthouses, and theater stage collimators to project long-distance parallel beams!"
+                }
+            },
+            {
+                id: 5,
+                category: "Magnifying Glass",
+                question: "To use a convex lens as a simple reading magnifying glass, where must you position the object relative to the lens?",
+                options: [
+                    "Far beyond 2F₁ to reduce spherical aberrations.",
+                    "Between F₁ and 2F₁ to project onto a far wall.",
+                    "Between the optical center O and the principal focus F₁ (|u| < f).",
+                    "Directly touching the curved front face of the lens."
+                ],
+                correctIndex: 2,
+                explanation: {
+                    correctWhy: "When the object is placed inside the focal distance (|u| < f), the convex lens cannot bend the steep rays enough to converge on the right. The refracted rays diverge, and your eye traces them backward to form a large, upright, virtual image on the same side as the object (v < 0, m > +1).",
+                    pitfall: "If the object is placed outside the focal point (|u| > f), the lens forms an inverted real image on the other side, making it unusable as a handheld reading magnifier."
+                }
+            },
+            {
+                id: 6,
+                category: "Conjugate Foci & 2F Symmetry",
+                question: "A convex lens of focal length f = 8.0 cm forms a real image of the exact same size as the object (|m| = 1.00). What is the total distance from the object to its real image?",
+                options: [
+                    "16.0 cm",
+                    "32.0 cm",
+                    "24.0 cm",
+                    "8.0 cm"
+                ],
+                correctIndex: 1,
+                explanation: {
+                    correctWhy: "For |m| = 1.00, the object is at 2F₁ (distance = 2f = 16.0 cm left of lens), and the image forms at 2F₂ (distance = 2f = 16.0 cm right of lens). The total separation is 2f + 2f = 4f = 4 × 8.0 cm = 32.0 cm. 4f is the absolute minimum distance possible between an object and its real image in a convex lens!",
+                    pitfall: "Do not confuse object distance |u| = 2f (16 cm) with the total distance between the object and the projection screen (4f = 32 cm)."
+                }
+            },
+            {
+                id: 7,
+                category: "Concave Lens Behavior",
+                question: "Regardless of where a real object is placed along the principal axis in front of a concave (diverging) lens, the formed image is ALWAYS:",
+                options: [
+                    "Real, inverted, and magnified.",
+                    "Virtual, upright, and diminished (smaller than object), located between the lens and near focus F₁.",
+                    "Real, upright, and identical in height.",
+                    "At infinity, having infinite magnification."
+                ],
+                correctIndex: 1,
+                explanation: {
+                    correctWhy: "Because f < 0 and u < 0 for a concave lens, 1/v = 1/f + 1/u is always negative and |v| < |u|. Magnification m = v/u is always a positive fraction between 0 and +1. Therefore, the image is consistently virtual, upright, and diminished.",
+                    pitfall: "A single concave lens can NEVER produce a real or magnified image from a real object, making it uniquely safe for wide-angle door security peepholes."
+                }
+            },
+            {
+                id: 8,
+                category: "Optical Power & Diopters",
+                question: "An optometrist prescribes corrective eyeglass lenses with an optical power of P = -2.50 Diopters (D). What type of lens is this and what is its focal length?",
+                options: [
+                    "Convex lens with focal length f = +40.0 cm",
+                    "Concave lens with focal length f = -40.0 cm",
+                    "Concave lens with focal length f = -25.0 cm",
+                    "Convex lens with focal length f = +2.50 m"
+                ],
+                correctIndex: 1,
+                explanation: {
+                    correctWhy: "Power P = 1 / f(in meters). Negative power (P < 0) signifies a diverging (concave) lens used to treat myopia (nearsightedness). Focal length f = 1 / (-2.50 D) = -0.40 meters = -40.0 cm.",
+                    pitfall: "Remember that the diopter equation P = 1/f requires the focal length to be expressed in meters, not centimeters! 1 / (-2.5) = -0.40 m = -40 cm."
+                }
+            },
+            {
+                id: 9,
+                category: "The Half-Covered Lens Paradox",
+                question: "If the upper half of a convex lens is completely covered with opaque black paper, what happens to the real image of a candle flame formed on a screen?",
+                options: [
+                    "The top half of the candle image disappears completely.",
+                    "The bottom half of the candle image disappears completely.",
+                    "The complete image of the candle remains fully visible, but its brightness (intensity) is reduced by half.",
+                    "The image instantly turns virtual and upright."
+                ],
+                correctIndex: 2,
+                explanation: {
+                    correctWhy: "Light rays from every point of the candle spread out across the entire surface of the lens. The unblocked lower half still refracts light from every point of the candle to its corresponding image point, reconstructing the full image. However, because half of the incoming light photons are blocked, the image brightness drops by 50%!",
+                    pitfall: "A famous physics misconception! Students often think each half of the lens corresponds to that half of the image. In reality, each microscopic aperture of a lens receives light from the entire scene."
+                }
+            },
+            {
+                id: 10,
+                category: "Magnification Sign & Size",
+                question: "If an optical computation yields a linear magnification of m = -2.40 for a lens, what does this mathematically convey about the image?",
+                options: [
+                    "The image is virtual, upright, and 2.40 times smaller than the object.",
+                    "The image is real, inverted, and 2.40 times larger than the object.",
+                    "The image is virtual, inverted, and 2.40 times smaller than the object.",
+                    "The image cannot physically exist because magnification cannot be negative."
+                ],
+                correctIndex: 1,
+                explanation: {
+                    correctWhy: "In the Cartesian convention: (1) The negative sign (m < 0) indicates the image is inverted relative to the object (hᵢ < 0), which signifies a real image in a single lens. (2) The absolute magnitude |m| = 2.40 > 1 means the image is enlarged to 2.40 times the original object's height.",
+                    pitfall: "A negative magnification does NOT mean the image has diminished in size! The minus sign denotes orientation (inverted vs upright), whereas the absolute value |m| denotes scale."
+                }
+            }
+        ];
+
+        // ==========================================
+        // 13. CHALLENGE ENGINE LOGIC
+        // ==========================================
+        const ChallengeEngine = {
+            currentIdx: 0,
+            solved: new Set(),
+            hintsOpen: new Set(),
+
+            init() {
+                this.render();
+            },
+
+            render() {
+                const ch = challengesData[this.currentIdx];
+                document.getElementById('ch-q-num').textContent = (this.currentIdx + 1);
+                document.getElementById('ch-category-badge').textContent = ch.category;
+                document.getElementById('ch-prompt').innerHTML = ch.prompt;
+                document.getElementById('ch-schema-text').textContent = ch.formula;
+                document.getElementById('ch-unit-label').textContent = ch.unit;
+                document.getElementById('ch-solved-num').textContent = this.solved.size;
+
+                // Input box reset
+                const inputEl = document.getElementById('ch-input');
+                inputEl.value = '';
+                inputEl.placeholder = `Enter answer in ${ch.unit} (e.g. ${ch.answer > 0 ? ch.answer : ch.answer})`;
+
+                // Hint box
+                const hintBox = document.getElementById('ch-hint-box');
+                hintBox.innerHTML = `<b>💡 Helpful Clue:</b> ${ch.hint}`;
+                if (this.hintsOpen.has(this.currentIdx)) {
+                    hintBox.classList.remove('hidden');
+                } else {
+                    hintBox.classList.add('hidden');
+                }
+
+                // Feedback box reset
+                const feedbackBox = document.getElementById('ch-feedback');
+                if (this.solved.has(this.currentIdx)) {
+                    feedbackBox.className = 'rounded-xl p-3.5 text-xs space-y-1.5 bg-emerald-950/60 border border-emerald-400/50 text-emerald-200 block';
+                    feedbackBox.innerHTML = `<div class="font-bold text-emerald-300 flex items-center gap-1.5"><i class="ph-bold ph-check-circle"></i> Solved Correctly!</div>${ch.solution}`;
+                } else {
+                    feedbackBox.className = 'hidden rounded-xl p-3.5 text-xs space-y-1.5';
+                    feedbackBox.innerHTML = '';
+                }
+
+                this.renderProgressPills();
+            },
+
+            renderProgressPills() {
+                const container = document.getElementById('ch-progress-bar');
+                container.innerHTML = '';
+                challengesData.forEach((c, idx) => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.onclick = () => {
+                        ChallengeEngine.currentIdx = idx;
+                        ChallengeEngine.render();
+                    };
+                    const isCurrent = idx === this.currentIdx;
+                    const isSolved = this.solved.has(idx);
+
+                    let base = "h-8 rounded-lg font-mono text-xs font-semibold flex items-center justify-center transition ";
+                    if (isCurrent) {
+                        base += isSolved
+                            ? "bg-emerald-500 text-gray-950 ring-2 ring-emerald-300 font-bold "
+                            : "bg-amber-500 text-gray-950 ring-2 ring-amber-300 font-bold shadow-md ";
+                    } else if (isSolved) {
+                        base += "bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 hover:bg-emerald-500/30 ";
+                    } else {
+                        base += "bg-gray-800/80 text-gray-400 border border-gray-700 hover:text-white hover:bg-gray-700 ";
+                    }
+
+                    btn.className = base;
+                    btn.textContent = (idx + 1);
+                    btn.title = `Challenge ${idx + 1}: ${c.category}`;
+                    container.appendChild(btn);
+                });
+            },
+
+            checkAnswer() {
+                const ch = challengesData[this.currentIdx];
+                const inputVal = parseFloat(document.getElementById('ch-input').value);
+                const feedbackBox = document.getElementById('ch-feedback');
+
+                if (isNaN(inputVal)) {
+                    feedbackBox.className = 'rounded-xl p-3 text-xs bg-amber-950/60 border border-amber-400/50 text-amber-200 block';
+                    feedbackBox.innerHTML = '⚠️ Please enter a numeric value before checking.';
+                    return;
+                }
+
+                const diff = Math.abs(inputVal - ch.answer);
+                if (diff <= ch.tolerance) {
+                    this.solved.add(this.currentIdx);
+                    feedbackBox.className = 'rounded-xl p-3.5 text-xs space-y-1.5 bg-emerald-950/70 border border-emerald-400/50 text-emerald-200 block animate-in fade-in duration-200';
+                    feedbackBox.innerHTML = `
+                        <div class="font-bold text-emerald-300 flex items-center gap-1.5 text-sm">
+                            <i class="ph-bold ph-check-circle text-base"></i> Correct Answer! Excellent Work!
+                        </div>
+                        <div class="leading-relaxed">${ch.solution}</div>
+                        <div class="pt-1 flex items-center gap-2">
+                            <button onclick="ChallengeEngine.loadInto3D()" class="px-2.5 py-1 rounded-md bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-400/40 font-semibold text-[11px] transition">
+                                ⚡ Verify Live on 3D Optical Bench
+                            </button>
+                        </div>
+                    `;
+                    document.getElementById('ch-solved-num').textContent = this.solved.size;
+                    this.renderProgressPills();
+                    showToast(`🎯 Challenge ${ch.id} Solved! (${this.solved.size}/10 completed)`);
+                } else {
+                    feedbackBox.className = 'rounded-xl p-3.5 text-xs space-y-1 bg-rose-950/70 border border-rose-500/50 text-rose-200 block animate-in fade-in duration-200';
+                    feedbackBox.innerHTML = `
+                        <div class="font-bold text-rose-300 flex items-center gap-1.5">
+                            <i class="ph-bold ph-x-circle text-base"></i> Not Quite (${inputVal} ${ch.unit})
+                        </div>
+                        <p class="leading-relaxed">Check your arithmetic and signs. Remember: convex f is (+), concave f is (-), object distance u is (-), and virtual image distance v is (-). Click <b>💡 Hint</b> for assistance!</p>
+                    `;
+                }
+            },
+
+            toggleHint() {
+                const hintBox = document.getElementById('ch-hint-box');
+                if (this.hintsOpen.has(this.currentIdx)) {
+                    this.hintsOpen.delete(this.currentIdx);
+                    hintBox.classList.add('hidden');
+                } else {
+                    this.hintsOpen.add(this.currentIdx);
+                    hintBox.classList.remove('hidden');
+                }
+            },
+
+            loadInto3D() {
+                const ch = challengesData[this.currentIdx];
+                if (!ch.preset) return;
+                setLensType(ch.preset.lensType);
+                state.focalMag = ch.preset.focalMag;
+                state.objectDistMag = ch.preset.objectDistMag;
+                state.objectHeight = ch.preset.objectHeight;
+                syncSlidersToState();
+                updateSimulation();
+                showToast(`⚡ Loaded Challenge ${ch.id} (${ch.category}) into 3D Lab! Check rays & image.`);
+            },
+
+            prev() {
+                if (this.currentIdx > 0) {
+                    this.currentIdx--;
+                    this.render();
+                }
+            },
+
+            next() {
+                if (this.currentIdx < challengesData.length - 1) {
+                    this.currentIdx++;
+                    this.render();
+                }
+            }
+        };
+
+        // ==========================================
+        // 14. CONCEPT MASTER QUIZ ENGINE
+        // ==========================================
+        const QuizEngine = {
+            currentIdx: 0,
+            userAnswers: new Array(quizData.length).fill(null),
+            score: 0,
+            isCompleted: false,
+
+            init() {
+                this.render();
+            },
+
+            render() {
+                const q = quizData[this.currentIdx];
+                document.getElementById('qz-q-num').textContent = (this.currentIdx + 1);
+                document.getElementById('qz-concept-badge').textContent = q.category;
+                document.getElementById('qz-score-num').textContent = this.score;
+
+                const answeredCount = this.userAnswers.filter(a => a !== null).length;
+                const accuracy = answeredCount > 0 ? Math.round((this.score / answeredCount) * 100) : 0;
+                document.getElementById('qz-accuracy-badge').textContent = `${accuracy}% Acc`;
+
+                document.getElementById('qz-question-text').innerHTML = q.question;
+
+                // Options Rendering
+                const container = document.getElementById('qz-options-container');
+                container.innerHTML = '';
+                const letters = ['A', 'B', 'C', 'D'];
+                const selected = this.userAnswers[this.currentIdx];
+                const hasAnswered = selected !== null;
+
+                q.options.forEach((optText, optIdx) => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.disabled = hasAnswered;
+                    btn.onclick = () => QuizEngine.selectOption(optIdx);
+
+                    let base = "w-full p-3 rounded-xl border text-left font-medium text-xs sm:text-sm flex items-start gap-3 transition ";
+
+                    if (!hasAnswered) {
+                        base += "bg-gray-900/80 hover:bg-gray-800 border-gray-800 text-gray-200 hover:border-gray-700 active:scale-[0.99]";
+                    } else {
+                        if (optIdx === q.correctIndex) {
+                            base += "bg-emerald-950/70 border-emerald-400/80 text-emerald-200 shadow-sm shadow-emerald-500/10 font-semibold";
+                        } else if (optIdx === selected) {
+                            base += "bg-rose-950/70 border-rose-500/80 text-rose-200";
+                        } else {
+                            base += "bg-gray-950/40 border-gray-900 text-gray-500 opacity-60";
+                        }
+                    }
+
+                    btn.className = base;
+                    btn.innerHTML = `
+                        <span class="w-6 h-6 rounded-lg font-mono font-bold text-xs flex items-center justify-center shrink-0 ${
+                            hasAnswered
+                                ? optIdx === q.correctIndex
+                                    ? 'bg-emerald-500 text-gray-950 font-black'
+                                    : optIdx === selected
+                                    ? 'bg-rose-500 text-white font-black'
+                                    : 'bg-gray-800 text-gray-500'
+                                : 'bg-gray-800 text-cyan-400 group-hover:bg-cyan-500 group-hover:text-gray-950'
+                        }">${letters[optIdx]}</span>
+                        <span class="flex-1 leading-snug">${optText}</span>
+                        ${
+                            hasAnswered
+                                ? optIdx === q.correctIndex
+                                    ? '<i class="ph-bold ph-check text-emerald-400 text-base shrink-0 mt-0.5"></i>'
+                                    : optIdx === selected
+                                    ? '<i class="ph-bold ph-x text-rose-400 text-base shrink-0 mt-0.5"></i>'
+                                    : ''
+                                : ''
+                        }
+                    `;
+                    container.appendChild(btn);
+                });
+
+                // Explanation Box
+                const expBox = document.getElementById('qz-explanation-box');
+                if (hasAnswered) {
+                    const isCorrect = selected === q.correctIndex;
+                    expBox.className = `rounded-2xl p-4 text-xs space-y-2 border ${
+                        isCorrect
+                            ? 'bg-emerald-950/50 border-emerald-500/40 text-emerald-200'
+                            : 'bg-rose-950/50 border-rose-500/40 text-rose-200'
+                    } block animate-in fade-in duration-200`;
+
+                    expBox.innerHTML = `
+                        <div class="flex items-center gap-2 font-bold text-sm ${isCorrect ? 'text-emerald-300' : 'text-rose-300'}">
+                            <i class="ph-bold ${isCorrect ? 'ph-check-circle' : 'ph-info'} text-base"></i>
+                            <span>${isCorrect ? 'Correct! Concept Breakdown:' : 'Insight & Concept Clarification:'}</span>
+                        </div>
+                        <p class="text-gray-200 leading-relaxed font-sans">${q.explanation.correctWhy}</p>
+                        <div class="pt-1.5 border-t border-gray-800/80 flex items-start gap-2 text-amber-300/90">
+                            <i class="ph-fill ph-warning-circle text-amber-400 shrink-0 text-sm mt-0.5"></i>
+                            <span><b>Common Trap:</b> ${q.explanation.pitfall}</span>
+                        </div>
+                    `;
+                } else {
+                    expBox.className = 'hidden rounded-2xl p-4 text-xs space-y-2';
+                    expBox.innerHTML = '';
+                }
+
+                // Next Button Text (Next Question or Show Results)
+                const btnNext = document.getElementById('qz-btn-next');
+                if (this.currentIdx === quizData.length - 1) {
+                    btnNext.textContent = 'See Final Results 🏆';
+                } else {
+                    btnNext.textContent = 'Next Question →';
+                }
+
+                this.renderProgressPills();
+            },
+
+            renderProgressPills() {
+                const container = document.getElementById('qz-progress-bar');
+                container.innerHTML = '';
+                quizData.forEach((q, idx) => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.onclick = () => {
+                        QuizEngine.currentIdx = idx;
+                        QuizEngine.render();
+                    };
+                    const isCurrent = idx === this.currentIdx;
+                    const ans = this.userAnswers[idx];
+
+                    let base = "h-8 rounded-lg font-mono text-xs font-semibold flex items-center justify-center transition ";
+                    if (isCurrent) {
+                        base += "ring-2 ring-cyan-400 font-bold ";
+                    }
+                    if (ans === null) {
+                        base += "bg-gray-800/80 text-gray-400 border border-gray-700 hover:text-white ";
+                    } else if (ans === q.correctIndex) {
+                        base += "bg-emerald-500/25 text-emerald-300 border border-emerald-400/50 ";
+                    } else {
+                        base += "bg-rose-500/25 text-rose-300 border border-rose-400/50 ";
+                    }
+
+                    btn.className = base;
+                    btn.textContent = (idx + 1);
+                    btn.title = `Question ${idx + 1}: ${q.category}`;
+                    container.appendChild(btn);
+                });
+            },
+
+            selectOption(optIdx) {
+                if (this.userAnswers[this.currentIdx] !== null) return;
+                this.userAnswers[this.currentIdx] = optIdx;
+                const q = quizData[this.currentIdx];
+                if (optIdx === q.correctIndex) {
+                    this.score++;
+                    showToast(`✨ Question ${q.id} Correct! (+1 point)`);
+                }
+                this.render();
+
+                // Check if all answered
+                const allAnswered = this.userAnswers.every(a => a !== null);
+                if (allAnswered && !this.isCompleted) {
+                    this.isCompleted = true;
+                }
+            },
+
+            prev() {
+                if (this.currentIdx > 0) {
+                    this.currentIdx--;
+                    this.render();
+                }
+            },
+
+            next() {
+                if (this.currentIdx < quizData.length - 1) {
+                    this.currentIdx++;
+                    this.render();
+                } else {
+                    this.showSummary();
+                }
+            },
+
+            showSummary() {
+                document.getElementById('qz-card-question').classList.add('hidden');
+                const summary = document.getElementById('qz-summary-screen');
+                summary.classList.remove('hidden');
+
+                const finalScore = this.score;
+                const pct = Math.round((finalScore / quizData.length) * 100);
+                document.getElementById('qz-summary-score').textContent = `You scored ${finalScore} out of ${quizData.length} (${pct}%)`;
+
+                let rank = "Optics Apprentice 🔍";
+                let desc = "Good effort! Review the ray tracing rules and experiment with the 3D lab to build a rock-solid foundation in optics.";
+                if (pct === 100) {
+                    rank = "Optics Grandmaster 🔭";
+                    desc = "Perfection! You have achieved complete conceptual mastery of thin lens equations, Cartesian signs, ray tracing, and real vs. virtual image physics.";
+                } else if (pct >= 80) {
+                    rank = "Optics Virtuoso 🌟";
+                    desc = "Superb performance! You clearly understand geometric optics and ray behavior across both convex and concave systems.";
+                } else if (pct >= 60) {
+                    rank = "Lab Specialist 🔬";
+                    desc = "Solid work! With a quick review of magnification and focal signs, you'll reach 100% mastery.";
+                }
+
+                document.getElementById('qz-summary-rank').textContent = rank;
+                document.getElementById('qz-summary-desc').textContent = desc;
+            },
+
+            restart() {
+                this.currentIdx = 0;
+                this.userAnswers = new Array(quizData.length).fill(null);
+                this.score = 0;
+                this.isCompleted = false;
+                document.getElementById('qz-summary-screen').classList.add('hidden');
+                document.getElementById('qz-card-question').classList.remove('hidden');
+                this.render();
+            },
+
+            review() {
+                this.currentIdx = 0;
+                document.getElementById('qz-summary-screen').classList.add('hidden');
+                document.getElementById('qz-card-question').classList.remove('hidden');
+                this.render();
+            }
+        };
+
+        // ==========================================
+        // 15. MODAL & TAB BRIDGE CONTROLS
+        // ==========================================
+        function toggleChallengeModal(tabToOpen) {
+            const modal = document.getElementById('challenge-modal');
+            const isHidden = modal.classList.contains('hidden');
+            if (isHidden) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                if (tabToOpen) {
+                    switchChallengeTab(tabToOpen);
+                } else {
+                    ChallengeEngine.render();
+                }
+            } else {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        function switchChallengeTab(tabName) {
+            const btnCh = document.getElementById('tab-btn-challenge');
+            const btnQz = document.getElementById('tab-btn-quiz');
+            const viewCh = document.getElementById('view-challenges');
+            const viewQz = document.getElementById('view-quiz');
+
+            if (tabName === 'challenge') {
+                btnCh.className = "flex-1 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition bg-amber-500/20 text-amber-300 border border-amber-400/50 shadow-sm";
+                btnQz.className = "flex-1 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition bg-gray-900/60 text-gray-400 border border-gray-800 hover:text-white hover:border-gray-700";
+                viewCh.classList.remove('hidden');
+                viewQz.classList.add('hidden');
+                ChallengeEngine.render();
+            } else {
+                btnQz.className = "flex-1 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition bg-cyan-500/20 text-cyan-300 border border-cyan-400/50 shadow-sm";
+                btnCh.className = "flex-1 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition bg-gray-900/60 text-gray-400 border border-gray-800 hover:text-white hover:border-gray-700";
+                viewQz.classList.remove('hidden');
+                viewCh.classList.add('hidden');
+                QuizEngine.render();
+            }
+        }
+
+        function checkChallengeAnswer() {
+            ChallengeEngine.checkAnswer();
+        }
+
+        function toggleChallengeHint() {
+            ChallengeEngine.toggleHint();
+        }
+
+        function loadChallengeInto3D() {
+            ChallengeEngine.loadInto3D();
+        }
+
+        function prevChallenge() {
+            ChallengeEngine.prev();
+        }
+
+        function nextChallenge() {
+            ChallengeEngine.next();
+        }
+
+        function prevQuizQuestion() {
+            QuizEngine.prev();
+        }
+
+        function nextQuizQuestion() {
+            QuizEngine.next();
+        }
+
+        function restartQuiz() {
+            QuizEngine.restart();
+        }
+
+        function reviewQuizQuestions() {
+            QuizEngine.review();
+        }
+
         window.onload = function () {
             // On mobile/tablet screens (<1024px), start collapsed for clean view
             if (window.innerWidth < 1024) {
@@ -2015,6 +3025,8 @@
             initThreeJS();
             animate();
             updatePanelUIState();
+            ChallengeEngine.init();
+            QuizEngine.init();
         };
     </script>
 </body>

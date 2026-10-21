@@ -145,8 +145,8 @@
     <!-- Floating 3D Interactive Labels Container -->
     <div id="labels-container" class="absolute inset-0 pointer-events-none overflow-hidden z-10"></div>
 
-    <!-- TOP BAR: Title, Happiness & Photosynthesis Meter, Mode Buttons -->
-    <header class="absolute top-3 left-3 right-3 z-20 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
+    <!-- TOP BAR: Title & Plant Happiness / Photosynthesis Meter -->
+    <header class="absolute top-3 left-3 right-3 z-20 flex items-center justify-between gap-3 pointer-events-none">
         <!-- App Logo & Title -->
         <div class="game-panel px-4 py-2.5 rounded-3xl flex items-center gap-3 pointer-events-auto">
             <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center text-white text-2xl shadow-md border-2 border-white">
@@ -162,7 +162,7 @@
         </div>
 
         <!-- Center Chemical Equation & Plant Happiness Meter -->
-        <div class="game-panel px-4 py-2 rounded-3xl flex flex-wrap items-center gap-3 md:gap-5 pointer-events-auto">
+        <div class="game-panel px-4 py-2 rounded-3xl flex items-center gap-3 md:gap-5 pointer-events-auto">
             <!-- Plant Mood Avatar -->
             <div class="flex items-center gap-2.5">
                 <div id="plant-mood-emoji" class="text-3xl animate-float">😄</div>
@@ -184,38 +184,21 @@
                 <span id="status-badge" class="px-2 py-0.5 rounded-full text-[11px] bg-emerald-100 text-emerald-700">Thriving! 🌟</span>
             </div>
         </div>
-
-        <!-- Quick Action & Camera Buttons -->
-        <div class="flex items-center gap-2 pointer-events-auto">
-            <button id="btn-ai-lab" onclick="toggleAiPanel()" class="btn-3d btn-green text-white font-display font-bold px-3.5 py-2.5 rounded-2xl text-sm flex items-center gap-2 border-2 border-white">
-                <span>✨</span>
-                <span>Ask Sprout AI</span>
-            </button>
-            <button id="btn-magnifier" onclick="toggleChloroplastZoom()" class="btn-3d btn-purple text-white font-display font-bold px-3.5 py-2.5 rounded-2xl text-sm flex items-center gap-2 border-2 border-white">
-                <i class="fas fa-magnifying-glass-plus"></i>
-                <span class="hidden md:inline">Zoom Inside Leaf</span>
-            </button>
-            <button id="btn-challenge" onclick="toggleChallengeModal()" class="btn-3d btn-yellow text-slate-900 font-display font-bold px-3.5 py-2.5 rounded-2xl text-sm flex items-center gap-2 border-2 border-white">
-                <i class="fas fa-trophy text-amber-700"></i>
-                <span class="hidden sm:inline">Challenge & Quiz</span>
-            </button>
-            <button id="btn-sound" onclick="toggleSound()" class="game-panel w-10 h-10 rounded-2xl flex items-center justify-center text-slate-700 hover:text-emerald-600 transition" title="Toggle Sound Effects">
-                <i id="sound-icon" class="fas fa-volume-up text-lg"></i>
-            </button>
-        </div>
     </header>
 
-    <!--Streams/Markers for Left Panel Update-->
-    <!-- LEFT PANEL: Collapsible Educational Info Card & Floating Toggle Pill -->
-    <div id="info-collapsed-tab" class="hidden absolute left-3 top-20 z-20 pointer-events-auto">
-        <button onclick="toggleLeftInfoCard(true)" class="game-panel px-3.5 py-2 rounded-2xl flex items-center gap-2 text-xs font-display font-bold text-slate-800 hover:scale-105 transition shadow-lg border-2 border-emerald-400">
-            <span id="collapsed-info-icon" class="text-base">☀️</span>
-            <span id="collapsed-info-title">Show Lesson Card</span>
-            <i class="fas fa-chevron-right text-emerald-600"></i>
-        </button>
-    </div>
-
+    <!-- LEFT SIDEBAR: Educational Info Card & Quick Action Buttons Dock -->
     <aside id="left-sidebar" class="absolute left-3 top-20 z-20 flex flex-col pointer-events-none w-64 sm:w-72 transition-all duration-300">
+        <!-- Floating Collapsed Pill (when lesson card is minimized) -->
+        <div id="info-collapsed-tab" class="hidden pointer-events-auto mb-2">
+            <button onclick="toggleLeftInfoCard(true)" class="game-panel px-3.5 py-2 rounded-2xl flex items-center justify-between w-full text-xs font-display font-bold text-slate-800 hover:scale-105 transition shadow-lg border-2 border-emerald-400">
+                <div class="flex items-center gap-2">
+                    <span id="collapsed-info-icon" class="text-base">☀️</span>
+                    <span id="collapsed-info-title">Show Lesson Card</span>
+                </div>
+                <i class="fas fa-chevron-right text-emerald-600"></i>
+            </button>
+        </div>
+
         <!-- Dynamic Pop-up Educational Card -->
         <div id="info-card" class="game-panel p-3 rounded-3xl pointer-events-auto transition-all duration-300 bg-white/85">
             <div class="flex items-start justify-between gap-1 mb-1.5">
@@ -249,6 +232,38 @@
                 </button>
                 <button id="btn-tts-speak" onclick="speakCurrentCardWithGemini()" class="bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 font-display font-bold text-[11px] py-1.5 px-2.5 rounded-xl flex items-center justify-center gap-1 transition" title="Listen with Gemini Voice!">
                     <i id="tts-icon" class="fas fa-volume-high text-amber-600"></i> <span id="tts-btn-text">Listen</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Quick Action & Lab Tools Dock (Left Side Buttons) -->
+        <div id="left-action-panel" class="game-panel p-2.5 rounded-3xl pointer-events-auto mt-2.5 transition-all duration-300 bg-white/90 shadow-md">
+            <div class="flex items-center justify-between px-1 mb-1.5">
+                <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+                    <i class="fas fa-bolt text-amber-500 text-xs"></i> Lab Actions
+                </span>
+                <span class="text-[10px] font-bold text-slate-400">Interactive Tools</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+                <!-- 1. Ask Sprout AI -->
+                <button id="btn-ai-lab" onclick="toggleAiPanel()" class="btn-3d btn-green text-white font-display font-bold py-2 px-2 rounded-2xl text-xs flex items-center justify-center gap-1.5 border-2 border-white shadow-sm" title="Chat with Sunny Sprout AI">
+                    <span>✨</span>
+                    <span>Sprout AI</span>
+                </button>
+                <!-- 2. Inside Leaf Chloroplast Zoom -->
+                <button id="btn-magnifier" onclick="toggleChloroplastZoom()" class="btn-3d btn-purple text-white font-display font-bold py-2 px-2 rounded-2xl text-xs flex items-center justify-center gap-1.5 border-2 border-white shadow-sm" title="Zoom Inside Leaf Chloroplast">
+                    <i class="fas fa-search-plus text-xs"></i>
+                    <span>Inside Leaf</span>
+                </button>
+                <!-- 3. Challenge & Quiz -->
+                <button id="btn-challenge" onclick="toggleChallengeModal()" class="btn-3d btn-yellow text-slate-900 font-display font-bold py-2 px-2 rounded-2xl text-xs flex items-center justify-center gap-1.5 border-2 border-white shadow-sm" title="Challenge & Detective Quiz">
+                    <i class="fas fa-trophy text-amber-700 text-xs"></i>
+                    <span>Challenges</span>
+                </button>
+                <!-- 4. Sound FX Toggle -->
+                <button id="btn-sound" onclick="toggleSound()" class="game-panel py-2 px-2 rounded-2xl flex items-center justify-center gap-1.5 text-slate-700 hover:text-emerald-600 transition border-2 border-white text-xs font-display font-bold shadow-sm" title="Toggle Sound Effects">
+                    <i id="sound-icon" class="fas fa-volume-up text-sm text-emerald-600"></i>
+                    <span id="sound-text">Sound: ON</span>
                 </button>
             </div>
         </div>
@@ -960,7 +975,13 @@ If any input is low (<35%), playfully mention that it is your "limiting factor" 
         function toggleSound() {
             soundEnabled = !soundEnabled;
             const icon = document.getElementById('sound-icon');
-            icon.className = soundEnabled ? 'fas fa-volume-up text-lg text-emerald-600' : 'fas fa-volume-mute text-lg text-slate-400';
+            if (icon) {
+                icon.className = soundEnabled ? 'fas fa-volume-up text-sm text-emerald-600' : 'fas fa-volume-mute text-sm text-slate-400';
+            }
+            const text = document.getElementById('sound-text');
+            if (text) {
+                text.textContent = soundEnabled ? 'Sound: ON' : 'Sound: OFF';
+            }
             if (soundEnabled) playSound('pop');
         }
 
@@ -1834,14 +1855,14 @@ If any input is low (<35%), playfully mention that it is your "limiting factor" 
 
         function toggleLeftInfoCard(show) {
             playSound('pop');
-            const sidebar = document.getElementById('left-sidebar');
+            const infoCard = document.getElementById('info-card');
             const collapsedTab = document.getElementById('info-collapsed-tab');
             if (show) {
-                sidebar.classList.remove('hidden');
-                collapsedTab.classList.add('hidden');
+                if (infoCard) infoCard.classList.remove('hidden');
+                if (collapsedTab) collapsedTab.classList.add('hidden');
             } else {
-                sidebar.classList.add('hidden');
-                collapsedTab.classList.remove('hidden');
+                if (infoCard) infoCard.classList.add('hidden');
+                if (collapsedTab) collapsedTab.classList.remove('hidden');
             }
         }
 

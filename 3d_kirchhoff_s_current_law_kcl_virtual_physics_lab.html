@@ -221,7 +221,8 @@
       </button>
       <button onclick="toggleChallengeModal()" class="glass-panel glass-panel-interactive px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-emerald-300 hover:text-white flex items-center gap-2 border-emerald-400/40 bg-emerald-950/40">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        <span>Challenge</span>
+        <span>Challenge &amp; Quiz</span>
+        <span class="hidden md:inline-block text-[10px] font-mono-tech px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">10+10</span>
       </button>
       <button onclick="resetCamera()" class="hidden sm:flex glass-panel glass-panel-interactive px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white items-center gap-1.5" title="Reset Camera View">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
@@ -468,46 +469,194 @@
     </div>
   </div>
 
-  <!-- CHALLENGE MODE MODAL -->
-  <div id="challenge-modal" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="glass-panel p-6 sm:p-7 rounded-3xl max-w-md w-full border-emerald-400/50 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-200">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <div class="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
-          <h3 class="text-xs font-mono-tech uppercase tracking-wider text-emerald-300 font-bold">KCL Challenge (<span id="ch-q-num">1</span>/4)</h3>
+  <!-- CHALLENGE & QUIZ MODE MODAL -->
+  <div id="challenge-modal" class="hidden fixed inset-0 z-40 bg-black/70 backdrop-blur-md flex items-center justify-center p-3 sm:p-5">
+    <div class="glass-panel p-5 sm:p-6 rounded-3xl max-w-2xl w-full border-emerald-400/40 shadow-2xl flex flex-col max-h-[92vh] animate-in fade-in zoom-in duration-200">
+      
+      <!-- Top Modal Header -->
+      <div class="flex items-start justify-between pb-3 border-b border-slate-800/80 gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-400/50 flex items-center justify-center text-emerald-300 font-mono-tech font-bold text-base shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+            ΣI
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="text-sm sm:text-base font-bold text-white tracking-tight">KCL Mastery Center</h2>
+              <span class="text-[10px] font-mono-tech px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">10 Challenges + 10 Quizzes</span>
+            </div>
+            <p class="text-xs text-slate-300">Master Kirchhoff's Current Law &amp; charge conservation with hands-on practice</p>
+          </div>
         </div>
-        <button onclick="toggleChallengeModal()" class="w-7 h-7 rounded-lg bg-slate-800/80 border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition">✕</button>
+        <button onclick="toggleChallengeModal()" class="w-8 h-8 rounded-xl bg-slate-800/80 border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white hover:border-slate-500 transition" title="Close Modal">✕</button>
       </div>
 
-      <div id="ch-progress-bar" class="flex gap-1.5">
-        <div class="h-1.5 flex-1 rounded-full bg-emerald-400"></div>
-        <div class="h-1.5 flex-1 rounded-full bg-slate-700"></div>
-        <div class="h-1.5 flex-1 rounded-full bg-slate-700"></div>
-        <div class="h-1.5 flex-1 rounded-full bg-slate-700"></div>
-      </div>
-
-      <div class="text-sm font-medium text-white leading-relaxed" id="ch-prompt">
-        5A enters a junction. 2A leaves through one branch. What current leaves through the second branch?
-      </div>
-
-      <div class="flex items-center gap-2">
-        <input id="ch-input" type="number" step="0.1" placeholder="Enter Amps" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 font-mono-tech text-sm text-white focus:outline-none focus:border-emerald-400">
-        <span class="font-mono-tech text-slate-400 font-bold">A</span>
-        <button onclick="checkChallengeAnswer()" class="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/20">Check</button>
-      </div>
-
-      <div id="ch-feedback" class="hidden rounded-xl p-3 text-xs space-y-1"></div>
-
-      <div class="flex items-center justify-between pt-2 border-t border-slate-800">
-        <button onclick="loadChallengeInto3D()" class="text-xs font-semibold text-cyan-300 hover:text-white flex items-center gap-1.5">
-          <span>Load Preset in 3D Lab →</span>
+      <!-- Mode Tab Selector -->
+      <div class="flex items-center gap-2 pt-3 pb-2">
+        <button id="tab-btn-challenge" onclick="switchChallengeTab('challenge')" class="flex-1 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition bg-emerald-500/20 text-emerald-300 border border-emerald-400/50 shadow-sm">
+          <span>⚡ Circuit Challenges</span>
+          <span class="text-[10px] font-mono-tech px-1.5 py-0.2 rounded bg-emerald-500/30 text-white">10</span>
         </button>
-        <div class="flex items-center gap-2">
-          <button onclick="prevChallenge()" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs font-semibold border border-slate-700">Prev</button>
-          <button onclick="nextChallenge()" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs font-semibold border border-slate-700">Next</button>
-        </div>
+        <button id="tab-btn-quiz" onclick="switchChallengeTab('quiz')" class="flex-1 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition bg-slate-900/60 text-slate-400 border border-slate-800 hover:text-white hover:border-slate-700">
+          <span>🧠 Concept Master Quiz</span>
+          <span class="text-[10px] font-mono-tech px-1.5 py-0.2 rounded bg-slate-800 text-slate-300">10</span>
+        </button>
       </div>
+
+      <!-- Modal Body (Scrollable) -->
+      <div class="overflow-y-auto custom-scroll pr-1 flex-1 py-2 space-y-4">
+        
+        <!-- ================= TAB 1: CIRCUIT CALCULATION CHALLENGES ================= -->
+        <div id="view-challenges" class="space-y-4">
+          
+          <!-- Challenge Subheader & Pills -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between text-xs">
+              <div class="flex items-center gap-2">
+                <span class="text-slate-400 font-mono-tech">Challenge <span id="ch-q-num" class="text-emerald-400 font-bold">1</span>/10</span>
+                <span id="ch-category-badge" class="px-2 py-0.5 rounded-full text-[10px] font-mono-tech bg-cyan-500/20 text-cyan-300 border border-cyan-400/30">Node Inflow</span>
+              </div>
+              <span id="ch-solved-counter" class="font-mono-tech text-[11px] text-slate-400">Solved: <span class="text-emerald-400 font-bold" id="ch-solved-num">0</span>/10</span>
+            </div>
+
+            <!-- 10 Question Pill Selectors -->
+            <div id="ch-progress-bar" class="grid grid-cols-10 gap-1.5">
+              <!-- Dynamically generated pills 1-10 -->
+            </div>
+          </div>
+
+          <!-- Challenge Prompt Box -->
+          <div class="bg-slate-900/70 p-4 rounded-2xl border border-slate-800/80 space-y-2.5">
+            <div class="text-sm font-medium text-white leading-relaxed" id="ch-prompt">
+              <!-- Prompt text injected via JS -->
+            </div>
+            
+            <!-- Context Schema / Equation Pill -->
+            <div id="ch-schema-bar" class="text-xs font-mono-tech text-cyan-300 bg-cyan-950/40 px-3 py-2 rounded-xl border border-cyan-800/40 flex items-center gap-2">
+              <span class="text-cyan-400 font-bold">Node Rule:</span>
+              <span id="ch-schema-text">ΣI(in) = ΣI(out)</span>
+            </div>
+          </div>
+
+          <!-- Input, Check Answer & Hint Toggle -->
+          <div class="space-y-2">
+            <div class="flex items-center gap-2">
+              <div class="relative flex-1">
+                <input id="ch-input" type="number" step="0.1" placeholder="Enter Amps (e.g. 3.0)" onkeydown="if(event.key==='Enter') checkChallengeAnswer()" class="w-full bg-slate-950 border border-slate-700 focus:border-emerald-400 rounded-xl px-4 py-2.5 font-mono-tech text-sm text-white focus:outline-none focus:ring-1 focus:ring-emerald-400 transition placeholder:text-slate-600">
+                <span class="absolute right-3.5 top-1/2 -translate-y-1/2 font-mono-tech text-xs text-slate-400 font-bold">A</span>
+              </div>
+              <button onclick="checkChallengeAnswer()" class="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/20 active:scale-95">Check</button>
+              <button onclick="toggleChallengeHint()" class="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 hover:text-white border border-amber-500/30 font-semibold text-xs transition" title="Show Hint">💡 Hint</button>
+            </div>
+
+            <!-- Hint Box (Toggled) -->
+            <div id="ch-hint-box" class="hidden rounded-xl p-3 text-xs bg-amber-950/40 border border-amber-400/40 text-amber-200 leading-relaxed">
+              <!-- Injected hint text -->
+            </div>
+
+            <!-- Result Feedback Box -->
+            <div id="ch-feedback" class="hidden rounded-xl p-3.5 text-xs space-y-1.5 animate-in fade-in duration-150">
+              <!-- Injected feedback -->
+            </div>
+          </div>
+
+          <!-- Bottom Navigation & 3D Lab Preset Loader -->
+          <div class="flex items-center justify-between pt-3 border-t border-slate-800/80">
+            <button onclick="loadChallengeInto3D()" class="px-3.5 py-2 rounded-xl text-xs font-semibold text-cyan-300 hover:text-white bg-cyan-950/40 hover:bg-cyan-900/60 border border-cyan-400/30 flex items-center gap-1.5 transition">
+              <span>⚡ Load in 3D Lab &amp; Test</span>
+            </button>
+            <div class="flex items-center gap-2">
+              <button onclick="prevChallenge()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition">← Prev</button>
+              <button onclick="nextChallenge()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition">Next →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= TAB 2: CONCEPTUAL MASTER QUIZ ================= -->
+        <div id="view-quiz" class="hidden space-y-4">
+          
+          <!-- Quiz Subheader & Score HUD -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between text-xs">
+              <div class="flex items-center gap-2">
+                <span class="text-slate-400 font-mono-tech">Quiz <span id="qz-q-num" class="text-cyan-400 font-bold">1</span>/10</span>
+                <span id="qz-concept-badge" class="px-2 py-0.5 rounded-full text-[10px] font-mono-tech bg-amber-500/20 text-amber-300 border border-amber-400/30">Conservation Law</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="font-mono-tech text-[11px] text-slate-400">Score: <span id="qz-score-num" class="text-emerald-400 font-bold">0</span>/10</span>
+                <span id="qz-accuracy-badge" class="font-mono-tech text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">0%</span>
+              </div>
+            </div>
+
+            <!-- 10 Quiz Question Pills -->
+            <div id="qz-progress-bar" class="grid grid-cols-10 gap-1.5">
+              <!-- Dynamically generated pills 1-10 -->
+            </div>
+          </div>
+
+          <!-- Main Quiz Question Container -->
+          <div id="qz-card-question" class="space-y-3.5">
+            <!-- Question Prompt Card -->
+            <div class="bg-slate-900/70 p-4 rounded-2xl border border-slate-800/80">
+              <div class="text-xs uppercase font-mono-tech tracking-wider text-cyan-400 font-bold mb-1">Conceptual Challenge</div>
+              <div id="qz-question-text" class="text-sm font-semibold text-white leading-relaxed">
+                <!-- Question injected via JS -->
+              </div>
+            </div>
+
+            <!-- 4 Multiple Choice Options (A, B, C, D) -->
+            <div id="qz-options-container" class="space-y-2">
+              <!-- Injected options -->
+            </div>
+
+            <!-- Rich Concept & Misconception Breakdown Accordion (appears on answer) -->
+            <div id="qz-explanation-box" class="hidden rounded-2xl p-4 text-xs space-y-2 animate-in fade-in duration-200">
+              <!-- Injected concept breakdown -->
+            </div>
+
+            <!-- Quiz Navigation -->
+            <div class="flex items-center justify-between pt-3 border-t border-slate-800/80">
+              <button onclick="prevQuizQuestion()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition">← Prev Question</button>
+              <div class="flex items-center gap-2">
+                <button id="qz-btn-next" onclick="nextQuizQuestion()" class="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold transition shadow-lg shadow-cyan-500/20">Next Question →</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quiz Completion / Mastery Summary Screen (Initially Hidden) -->
+          <div id="qz-summary-screen" class="hidden bg-slate-900/80 p-6 rounded-2xl border border-emerald-400/40 text-center space-y-4">
+            <div class="w-16 h-16 mx-auto rounded-3xl bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-3xl shadow-[0_0_25px_rgba(16,185,129,0.4)]">
+              🏆
+            </div>
+            <div>
+              <div id="qz-summary-rank" class="text-lg font-bold text-white tracking-tight">KCL Grandmaster ⚡</div>
+              <div id="qz-summary-score" class="text-sm font-mono-tech text-emerald-400 font-semibold mt-1">You scored 10 out of 10 (100%)</div>
+              <p id="qz-summary-desc" class="text-xs text-slate-300 mt-2 max-w-md mx-auto leading-relaxed">Outstanding mastery! You have a rock-solid conceptual understanding of Kirchhoff's Current Law, charge conservation, and parallel current division.</p>
+            </div>
+            
+            <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <button onclick="restartQuiz()" class="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/20">
+                Retake Quiz
+              </button>
+              <button onclick="reviewQuizQuestions()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs border border-slate-700 transition">
+                Review Explanations
+              </button>
+              <button onclick="switchChallengeTab('challenge')" class="px-4 py-2.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 font-semibold text-xs border border-cyan-400/40 transition">
+                ⚡ Try Numerical Challenges
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
     </div>
+  </div>
+
+  <!-- FLOATING TOAST NOTIFICATION -->
+  <div id="toast-notify" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 glass-panel px-4 py-2.5 rounded-2xl border-emerald-400/50 bg-emerald-950/90 text-emerald-200 text-xs font-semibold flex items-center gap-2 shadow-2xl transition-all duration-300 pointer-events-none">
+    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+    <span id="toast-text">Preset loaded into 3D Lab!</span>
   </div>
 
   <script>
@@ -1173,63 +1322,312 @@
       camAnimLookAt = s.lookAt.clone();
     }
 
+    /********************************************************************
+     * 8B. COMPREHENSIVE CHALLENGE & QUIZ SYSTEM (10 CHALLENGES + 10 QUIZZES)
+     ********************************************************************/
+    let challengeTab = 'challenge'; // 'challenge' | 'quiz'
+    let currentChallengeIdx = 0;
+    let challengeSolvedMap = {}; // idx -> boolean
+
     const challengeQuestions = [
       {
-        prompt: '5A enters a junction. 2A leaves through one branch. What current leaves through the second branch?',
+        category: 'Basic Node Balance',
+        prompt: 'At junction Node J₁, a total incoming current of 5.0 A enters from two feeder branches. Branch I₃ draws 2.0 A out of the junction. How much current must leave through branch I₄?',
+        schema: 'Node J₁: ΣI(in) = ΣI(out) ➔ 5.0A = 2.0A + I₄',
         answer: 3.0,
-        eq: '5A = 2A + 3A',
-        hint: 'Use ΣI(in) = ΣI(out). Subtract the known outgoing current (2A) from the incoming current (5A).',
-        simPreset: { v1: 15, r1: 5, v2: 10, r2: 5, r3: 6, r4: 4 }
+        eq: '5.0A = 2.0A + 3.00A (I₄ = 3.00 A)',
+        hint: 'Use Kirchhoff’s Current Law: total current entering equals total current leaving. Subtract 2.0 A from 5.0 A.',
+        simPreset: { v1: 15, r1: 5, v2: 10, r2: 5, r3: 6, r4: 4, fourBranches: true }
       },
       {
-        prompt: 'Two branches feed a node with I₁ = 3.5A and I₂ = 1.5A. If all outgoing current flows into a single branch I₃, what is I₃?',
+        category: 'Single Load Outflow',
+        prompt: 'Two independent battery branches feed Node J₁ with I₁ = 3.5 A and I₂ = 1.5 A. If branch 4 is turned OFF (disconnected) and all current exits through branch I₃, what is the current I₃?',
+        schema: 'Node J₁: I₁ + I₂ = I₃ ➔ 3.5A + 1.5A = I₃',
         answer: 5.0,
-        eq: '3.5A + 1.5A = 5.0A',
-        hint: 'Add both incoming currents entering the junction: I₁ + I₂ = I₃.',
-        simPreset: { v1: 14, r1: 4, v2: 6, r2: 4, r3: 5, r4: 5 }
+        eq: '3.5A + 1.5A = 5.00A (I₃ = 5.00 A)',
+        hint: 'Because the junction does not store charge, all incoming charges must leave through the only open path: sum I₁ + I₂.',
+        simPreset: { v1: 14, r1: 4, v2: 6, r2: 4, r3: 4, r4: 4, fourBranches: false }
       },
       {
-        prompt: 'At Node J₁, I₁ = 4A and I₂ = 2A enter. Two branches leave the node with I₃ = 4.5A and I₄. Find I₄.',
+        category: '4-Branch Network',
+        prompt: 'At Node J₁, currents I₁ = 4.0 A and I₂ = 2.0 A enter. Two load branches draw current away. If branch ammeter 3 reads I₃ = 4.5 A, what is the current in branch I₄?',
+        schema: 'Node J₁: I₁ + I₂ = I₃ + I₄ ➔ 4.0A + 2.0A = 4.5A + I₄',
         answer: 1.5,
-        eq: '4A + 2A = 4.5A + 1.5A',
-        hint: 'Total incoming current is 4A + 2A = 6A. Therefore, I₄ = 6A - 4.5A.',
-        simPreset: { v1: 16, r1: 4, v2: 8, r2: 4, r3: 3, r4: 9 }
+        eq: '6.0A = 4.5A + 1.50A (I₄ = 1.50 A)',
+        hint: 'Total incoming current is 4.0 A + 2.0 A = 6.0 A. Therefore, I₄ = 6.0 A - 4.5 A.',
+        simPreset: { v1: 16, r1: 4, v2: 8, r2: 4, r3: 3, r4: 9, fourBranches: true }
       },
       {
-        prompt: 'In our circuit, V₁ = 18V across R₁ = 6Ω and V₂ = 12V across R₂ = 6Ω enter a junction. If I₃ = 2A leaves, what is I₄?',
+        category: 'Ohm’s Law + KCL',
+        prompt: 'Source 1 has V₁ = 18.0 V across R₁ = 6.0 Ω. Source 2 has V₂ = 12.0 V across R₂ = 6.0 Ω. Both enter Node J₁. If load branch I₃ carries 2.0 A, what is current I₄?',
+        schema: 'Node J₁: (V₁/R₁) + (V₂/R₂) = I₃ + I₄ ➔ 3.0A + 2.0A = 2.0A + I₄',
         answer: 3.0,
-        eq: '(18V/6Ω) + (12V/6Ω) = 3A + 2A = 2A + 3A',
-        hint: 'First find I₁ = 18/6 = 3A and I₂ = 12/6 = 2A. Total incoming is 5A, so I₄ = 5A - 2A.',
-        simPreset: { v1: 18, r1: 6, v2: 12, r2: 6, r3: 6, r4: 4 }
+        eq: '(18V/6Ω) + (12V/6Ω) = 5.0A = 2.0A + 3.00A (I₄ = 3.00 A)',
+        hint: 'First find incoming currents: I₁ = 18/6 = 3A, I₂ = 12/6 = 2A. Total entering is 5A. Subtract I₃ to find I₄.',
+        simPreset: { v1: 18, r1: 6, v2: 12, r2: 6, r3: 6, r4: 4, fourBranches: true }
+      },
+      {
+        category: 'Symmetric Splitting',
+        prompt: 'A total current of 6.0 A enters Node J₁ (I₁ = 4.0 A, I₂ = 2.0 A). The outgoing path splits across two identical resistors: R₃ = 8.0 Ω and R₄ = 8.0 Ω. What current passes through R₄?',
+        schema: 'When R₃ = R₄, current splits equally: I₃ = I₄ = ΣI(in) / 2',
+        answer: 3.0,
+        eq: '6.0A / 2 = 3.00A (I₄ = 3.00 A)',
+        hint: 'When two parallel branches offer identical resistance, the incoming current divides in half evenly.',
+        simPreset: { v1: 16, r1: 4, v2: 10, r2: 5, r3: 8, r4: 8, fourBranches: true }
+      },
+      {
+        category: 'Current Divider Rule',
+        prompt: 'A current of 6.0 A enters Node J₁. Outgoing branch 3 has R₃ = 4.0 Ω and branch 4 has R₄ = 8.0 Ω. By the current divider rule, calculate the current I₄ flowing through the larger resistor.',
+        schema: 'Current Divider: I₄ = I_total × [R₃ / (R₃ + R₄)] = 6.0 × [4 / 12]',
+        answer: 2.0,
+        eq: '6.0A × (4Ω / 12Ω) = 2.00A (I₄ = 2.00 A, I₃ = 4.00 A)',
+        hint: 'Current follows the path of least resistance. The 8Ω resistor gets half as much current as the 4Ω resistor: I₄ = 6 × (4/12).',
+        simPreset: { v1: 16, r1: 4, v2: 10, r2: 5, r3: 4, r4: 8, fourBranches: true }
+      },
+      {
+        category: 'Inflow Detective',
+        prompt: 'At Node J₁, two exit branches carry I₃ = 3.2 A and I₄ = 1.8 A away from the node. Branch 1 supplies I₁ = 2.6 A into the node. What incoming current I₂ must branch 2 supply?',
+        schema: 'Node J₁: I₁ + I₂ = I₃ + I₄ ➔ 2.6A + I₂ = 3.2A + 1.8A = 5.0A',
+        answer: 2.4,
+        eq: '2.6A + 2.40A = 3.2A + 1.8A = 5.00A (I₂ = 2.40 A)',
+        hint: 'Calculate total outflow first: 3.2A + 1.8A = 5.0A. Then solve for I₂ = 5.0A - 2.6A.',
+        simPreset: { v1: 13, r1: 5, v2: 12, r2: 5, r3: 4.5, r4: 8, fourBranches: true }
+      },
+      {
+        category: 'Resistance Ratio 4:1',
+        prompt: 'A junction receives I₁ = 3.0 A and I₂ = 1.5 A (Total 4.5 A). The exit branches have R₃ = 3.0 Ω and R₄ = 12.0 Ω. Calculate the current flowing through branch 3 (I₃).',
+        schema: 'Current Divider: I₃ = 4.5A × [12Ω / (3Ω + 12Ω)] = 4.5 × (12/15)',
+        answer: 3.6,
+        eq: '4.5A × (12Ω / 15Ω) = 3.60A (I₃ = 3.60 A, I₄ = 0.90 A)',
+        hint: 'Branch 3 has 4× lower resistance than Branch 4, so it carries 4× more current: I₃ = 4.5 × (12/15).',
+        simPreset: { v1: 15, r1: 5, v2: 9, r2: 6, r3: 3, r4: 12, fourBranches: true }
+      },
+      {
+        category: 'Asymmetric Bypass',
+        prompt: 'A total of 4.0 A enters Node J₁ (I₁ = 2.0 A, I₂ = 2.0 A). Branch 3 has R₃ = 2.0 Ω, while Branch 4 has R₄ = 18.0 Ω. How much current passes through Branch 4 (I₄)?',
+        schema: 'Current Divider: I₄ = 4.0A × [2Ω / (2Ω + 18Ω)] = 4.0 × (2/20)',
+        answer: 0.4,
+        eq: '4.0A × (2Ω / 20Ω) = 0.40A (I₄ = 0.40 A, I₃ = 3.60 A)',
+        hint: 'Because R₄ is 9× higher than R₃, 90% of the current flows through R₃ and only 10% through R₄.',
+        simPreset: { v1: 12, r1: 6, v2: 10, r2: 5, r3: 2, r4: 18, fourBranches: true }
+      },
+      {
+        category: '5-Wire Junction Master',
+        prompt: 'A complex 5-wire junction has three incoming wires carrying I_A = 2.5 A, I_B = 1.8 A, and I_C = 3.7 A. Wire D drains 4.2 A out of the junction. What current must wire E drain out?',
+        schema: '5-Wire Node: I_A + I_B + I_C = I_D + I_E ➔ 8.0A = 4.2A + I_E',
+        answer: 3.8,
+        eq: '(2.5 + 1.8 + 3.7)A - 4.2A = 8.0A - 4.2A = 3.80A (I_E = 3.80 A)',
+        hint: 'Sum all three incoming currents together (2.5 + 1.8 + 3.7 = 8.0A), then subtract the outgoing current in Wire D.',
+        simPreset: { v1: 20, r1: 5, v2: 16, r2: 4, r3: 4, r4: 4, fourBranches: true }
       }
     ];
 
-    let currentChallengeIdx = 0;
+    // 10 Conceptual Quiz Questions for deep student comprehension
+    const conceptQuizQuestions = [
+      {
+        concept: 'Conservation Law',
+        question: 'Kirchhoff’s Current Law (KCL) is a direct consequence of which fundamental physical conservation principle?',
+        options: [
+          'Conservation of Energy (First Law of Thermodynamics)',
+          'Conservation of Electric Charge',
+          'Conservation of Linear Momentum',
+          'Newton’s Third Law of Action and Reaction'
+        ],
+        correct: 1,
+        explanation: 'KCL is directly derived from the Conservation of Electric Charge. Charges cannot be created or destroyed. In steady-state circuit junctions, charge cannot pile up indefinitely or disappear, meaning the rate of charge entering (dq/dt = I) must equal the rate of charge leaving.'
+      },
+      {
+        concept: 'Resistor Misconception',
+        question: 'A constant current of 2.0 A flows into a 10 Ω resistor. How much current exits the other terminal of the resistor?',
+        options: [
+          'Less than 2.0 A, because the resistor consumes electric current as thermal heat',
+          'Exactly 2.0 A, because electric charge is conserved and not consumed in resistors',
+          'More than 2.0 A, because resistance accelerates electrical charge carriers',
+          '0.0 A, if the resistance value exceeds the incoming branch voltage'
+        ],
+        correct: 1,
+        explanation: 'A major student misconception is thinking resistors "use up" electric current. Resistors do NOT destroy charge carriers! Every electron that enters one terminal pushes an electron out the other. What drops across a resistor is VOLTAGE (electric potential energy converted to thermal energy), while current entering equals current exiting.'
+      },
+      {
+        concept: 'Sign Convention',
+        question: 'When writing KCL in algebraic form as ΣI = 0, if currents entering a node are assigned positive (+), how must currents leaving the node be treated?',
+        options: [
+          'Also positive (+)',
+          'Negative (-)',
+          'Squared (I²)',
+          'Zero (ignored in node summation)'
+        ],
+        correct: 1,
+        explanation: 'In the algebraic formulation ΣI = 0, opposing directions must have opposite signs. If currents entering the node are defined as positive (+I), currents leaving must be defined as negative (-I). This gives ΣI(in) - ΣI(out) = 0, which directly simplifies to ΣI(in) = ΣI(out).'
+      },
+      {
+        concept: 'Hydraulic Analogy',
+        question: 'In the hydraulic (water pipe) analogy of electric circuits, what corresponds directly to Kirchhoff’s Current Law at a pipe T-junction?',
+        options: [
+          'Water pressure dropping to 0 PSI at the joint',
+          'The volume rate of water entering the joint per second equals the volume rate leaving it per second',
+          'Water flowing faster through narrow pipes than wide pipes',
+          'Water turning into vapor inside the pipe junction'
+        ],
+        correct: 1,
+        explanation: 'In an incompressible fluid system like household water pipes, water cannot accumulate indefinitely or vanish inside a sealed T-joint. The mass flow rate (gallons per second) entering the pipe joint must equal the flow rate leaving it, which is identical to Coulombs per second (Amperes) in an electrical circuit node.'
+      },
+      {
+        concept: 'Current Division',
+        question: 'A current of 6.0 A enters a junction that splits into two parallel branches: Branch A has R = 2.0 Ω and Branch B has R = 6.0 Ω. Which branch carries more current?',
+        options: [
+          'Branch A (2.0 Ω), because lower resistance provides an easier path for current flow',
+          'Branch B (6.0 Ω), because higher resistance pulls more electrical current',
+          'Both branches carry exactly 3.0 A each',
+          'Neither; current cannot split across unequal resistors'
+        ],
+        correct: 0,
+        explanation: 'Parallel branches share the exact same voltage drop (V = I × R). Therefore, branch current is inversely proportional to branch resistance. The smaller 2Ω resistor carries 3 times as much current (4.5 A) as the 6Ω resistor (1.5 A), while 4.5A + 1.5A = 6.0A completely satisfies KCL.'
+      },
+      {
+        concept: 'Broken Wire / Open Circuit',
+        question: 'Suppose Node J₁ receives 4.0 A from an incoming battery. It connects to two load branches, but the wire in branch 2 is physically cut (open circuit). What is the current in branch 1?',
+        options: [
+          '0.0 A (the entire circuit ceases to function)',
+          '4.0 A (all incoming current must exit through the only remaining closed branch)',
+          '2.0 A (the remaining 2.0 A leaks into the surrounding ambient air)',
+          '8.0 A (current doubles due to reflection)'
+        ],
+        correct: 1,
+        explanation: 'An open circuit has infinite resistance, so current through branch 2 drops to zero (I₂ = 0 A). Because charge cannot accumulate at Node J₁, all 4.0 A entering must exit through the only remaining closed conducting path (branch 1).'
+      },
+      {
+        concept: 'Node Potential Invariance',
+        question: 'If the electrical potential (voltage) of junction Node J₁ is elevated from 5 V to 500 V, what happens to the validity of KCL (ΣI_in = ΣI_out)?',
+        options: [
+          'KCL becomes invalid because high voltages generate extra charge carriers',
+          'KCL remains 100% strictly valid, because charge conservation holds regardless of electric potential',
+          'KCL only holds when the node voltage is exactly 0 V (ground)',
+          'The incoming current will exceed the outgoing current by a factor of 100'
+        ],
+        correct: 1,
+        explanation: 'Kirchhoff’s Current Law is a fundamental continuity equation representing charge conservation. It remains valid at ANY node voltage, whether 0V, 12V, or 500,000V. While node voltage determines individual branch currents via Ohm’s law, the sum entering always equals the sum leaving.'
+      },
+      {
+        concept: 'Direction Detective',
+        question: 'Three wires meet at a node. Wire 1 carries 3.0 A entering the node, and Wire 2 carries 4.0 A entering the node. What must Wire 3 carry to satisfy Kirchhoff’s Current Law?',
+        options: [
+          '7.0 A leaving the node',
+          '7.0 A entering the node',
+          '1.0 A leaving the node',
+          '0.0 A (the node is self-contained)'
+        ],
+        correct: 0,
+        explanation: 'Total known incoming current is 3.0 A + 4.0 A = 7.0 A entering. For charge not to accumulate infinitely at the node, Wire 3 must carry 7.0 A directed AWAY from (leaving) the node, ensuring ΣI = 0.'
+      },
+      {
+        concept: 'Symmetric Multi-Split',
+        question: 'A current of 9.0 A enters a junction that splits symmetrically into three identical resistors in parallel (R₁ = R₂ = R₃ = 15 Ω). What is the current through each resistor?',
+        options: [
+          '9.0 A through each',
+          '3.0 A through each',
+          '1.0 A through each',
+          '4.5 A through two, and 0.0 A through the third'
+        ],
+        correct: 1,
+        explanation: 'Due to circuit symmetry and identical branch resistances, incoming current divides into three equal portions: 9.0 A / 3 = 3.0 A through each branch. Note that 3.0 + 3.0 + 3.0 = 9.0 A, perfectly satisfying KCL.'
+      },
+      {
+        concept: 'Lumped Circuit Limit',
+        question: 'Under what physical condition does standard lumped Kirchhoff’s Current Law require modification (such as adding displacement current or parasitic capacitance)?',
+        options: [
+          'In ordinary direct current (DC) battery circuits',
+          'At ultra-high frequencies where component size approaches wavelength, or between capacitor plates where charge accumulates',
+          'When resistors are made of carbon composition instead of metal film',
+          'Whenever the total current exceeds 1.0 Ampere'
+        ],
+        correct: 1,
+        explanation: 'Standard KCL operates under the "Lumped Matter" approximation, which assumes zero charge accumulation at nodes (dq/dt = 0). At ultra-high radio frequencies or between capacitor plates where charge physically accumulates (Q = CV), Maxwell’s displacement current (dD/dt) must be included to maintain generalized charge conservation.'
+      }
+    ];
+
+    let currentQuizIdx = 0;
+    let quizAnswersMap = {}; // idx -> { selected: num, correct: bool }
+
+    function switchChallengeTab(tab) {
+      challengeTab = tab;
+      const btnCh = document.getElementById('tab-btn-challenge');
+      const btnQz = document.getElementById('tab-btn-quiz');
+      const viewCh = document.getElementById('view-challenges');
+      const viewQz = document.getElementById('view-quiz');
+
+      if (tab === 'challenge') {
+        btnCh.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition bg-emerald-500/20 text-emerald-300 border border-emerald-400/50 shadow-sm';
+        btnQz.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition bg-slate-900/60 text-slate-400 border border-slate-800 hover:text-white hover:border-slate-700';
+        viewCh.classList.remove('hidden');
+        viewQz.classList.add('hidden');
+        renderChallengeQuestion();
+      } else {
+        btnQz.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition bg-cyan-500/20 text-cyan-300 border border-cyan-400/50 shadow-sm';
+        btnCh.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition bg-slate-900/60 text-slate-400 border border-slate-800 hover:text-white hover:border-slate-700';
+        viewQz.classList.remove('hidden');
+        viewCh.classList.add('hidden');
+        renderQuizQuestion();
+      }
+    }
 
     function toggleChallengeModal() {
       const modal = document.getElementById('challenge-modal');
       modal.classList.toggle('hidden');
       if (!modal.classList.contains('hidden')) {
-        renderChallengeQuestion();
+        if (challengeTab === 'challenge') {
+          renderChallengeQuestion();
+        } else {
+          renderQuizQuestion();
+        }
       }
     }
 
+    /* ================= TAB 1: CHALLENGE FUNCTIONS ================= */
     function renderChallengeQuestion() {
       const q = challengeQuestions[currentChallengeIdx];
       document.getElementById('ch-q-num').textContent = currentChallengeIdx + 1;
+      document.getElementById('ch-category-badge').textContent = q.category;
       document.getElementById('ch-prompt').textContent = q.prompt;
+      document.getElementById('ch-schema-text').textContent = q.schema;
       document.getElementById('ch-input').value = '';
       document.getElementById('ch-feedback').classList.add('hidden');
+      
+      const hintBox = document.getElementById('ch-hint-box');
+      hintBox.classList.add('hidden');
+      hintBox.innerHTML = `<strong>💡 Physics Hint:</strong> ${q.hint}`;
 
+      // Update Solved Counter
+      const solvedCount = Object.keys(challengeSolvedMap).length;
+      document.getElementById('ch-solved-num').textContent = solvedCount;
+
+      // Update 10 Pills
       const bar = document.getElementById('ch-progress-bar');
       bar.innerHTML = '';
       challengeQuestions.forEach((_, idx) => {
-        const pill = document.createElement('div');
-        pill.className = idx === currentChallengeIdx
-          ? 'h-1.5 flex-1 rounded-full bg-emerald-400'
-          : 'h-1.5 flex-1 rounded-full bg-slate-700';
+        const pill = document.createElement('button');
+        pill.onclick = () => jumpToChallenge(idx);
+        const isCurrent = idx === currentChallengeIdx;
+        const isSolved = challengeSolvedMap[idx];
+
+        let bg = 'bg-slate-800/80 text-slate-400 border-slate-700';
+        if (isSolved) {
+          bg = 'bg-emerald-500/30 text-emerald-300 border-emerald-400/60 font-bold';
+        }
+        if (isCurrent) {
+          bg += ' ring-2 ring-cyan-400 text-white';
+        }
+
+        pill.className = `h-7 rounded-lg border text-[11px] font-mono-tech flex items-center justify-center transition hover:scale-105 ${bg}`;
+        pill.innerHTML = isSolved ? `✓` : `${idx + 1}`;
+        pill.title = `Challenge ${idx + 1}: ${challengeQuestions[idx].category}`;
         bar.appendChild(pill);
       });
+    }
+
+    function toggleChallengeHint() {
+      const hintBox = document.getElementById('ch-hint-box');
+      hintBox.classList.toggle('hidden');
     }
 
     function checkChallengeAnswer() {
@@ -1238,15 +1636,33 @@
       const fb = document.getElementById('ch-feedback');
       fb.classList.remove('hidden');
 
-      if (!isNaN(userVal) && Math.abs(userVal - q.answer) < 0.05) {
-        fb.className = 'rounded-xl p-3 text-xs space-y-1 bg-emerald-950/80 border border-emerald-400/50 text-emerald-200';
-        fb.innerHTML = `<div class="font-bold text-emerald-400 text-sm">✓ Correct!</div>
-                        <div class="font-mono-tech text-white">${q.eq}</div>`;
+      if (!isNaN(userVal) && Math.abs(userVal - q.answer) <= 0.08) {
+        challengeSolvedMap[currentChallengeIdx] = true;
+        fb.className = 'rounded-xl p-3.5 text-xs space-y-1.5 bg-emerald-950/80 border border-emerald-400/60 text-emerald-200 animate-in fade-in duration-150';
+        fb.innerHTML = `
+          <div class="flex items-center gap-2 font-bold text-emerald-300 text-sm">
+            <span class="w-5 h-5 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center text-xs">✓</span>
+            Correct Answer! Outstanding!
+          </div>
+          <div class="font-mono-tech text-white bg-slate-900/60 p-2 rounded-lg border border-emerald-500/30">${q.eq}</div>
+          <div class="text-slate-300 pt-0.5">Electric charge is strictly conserved at Node J₁. Try clicking <strong>Load in 3D Lab</strong> below to verify the electron currents in real-time!</div>
+        `;
+        renderChallengeQuestion();
       } else {
-        fb.className = 'rounded-xl p-3 text-xs space-y-1 bg-rose-950/80 border border-rose-400/50 text-rose-200';
-        fb.innerHTML = `<div class="font-bold text-rose-400 text-sm">✗ Try Again</div>
-                        <div>${q.hint}</div>`;
+        fb.className = 'rounded-xl p-3.5 text-xs space-y-1 bg-rose-950/80 border border-rose-400/50 text-rose-200 animate-in fade-in duration-150';
+        fb.innerHTML = `
+          <div class="flex items-center gap-2 font-bold text-rose-400 text-sm">
+            <span class="w-5 h-5 rounded-full bg-rose-500 text-slate-950 flex items-center justify-center text-xs">✗</span>
+            Not quite right. Try again!
+          </div>
+          <div class="text-rose-200">${q.hint}</div>
+        `;
       }
+    }
+
+    function jumpToChallenge(idx) {
+      currentChallengeIdx = idx;
+      renderChallengeQuestion();
     }
 
     function nextChallenge() {
@@ -1260,15 +1676,248 @@
     }
 
     function loadChallengeInto3D() {
-      const p = challengeQuestions[currentChallengeIdx].simPreset;
+      const q = challengeQuestions[currentChallengeIdx];
+      const p = q.simPreset;
+      if (!p) return;
+
       document.getElementById('slider-v1').value = p.v1;
       document.getElementById('slider-r1').value = p.r1;
       document.getElementById('slider-v2').value = p.v2;
       document.getElementById('slider-r2').value = p.r2;
       document.getElementById('slider-r3').value = p.r3;
       document.getElementById('slider-r4').value = p.r4;
+
+      if (p.fourBranches !== undefined && circuitState.fourBranches !== p.fourBranches) {
+        toggleFourthBranch();
+      }
+
+      if (!circuitState.powerOn) {
+        togglePower();
+      }
+
       updateCircuitFromUI();
       toggleChallengeModal();
+
+      showToast(`⚡ Preset for Challenge ${currentChallengeIdx + 1} loaded in 3D! Check Ammeters & Node J₁`);
+    }
+
+    /* ================= TAB 2: CONCEPTUAL QUIZ FUNCTIONS ================= */
+    function renderQuizQuestion() {
+      const q = conceptQuizQuestions[currentQuizIdx];
+      const cardQ = document.getElementById('qz-card-question');
+      const cardSum = document.getElementById('qz-summary-screen');
+
+      cardQ.classList.remove('hidden');
+      cardSum.classList.add('hidden');
+
+      document.getElementById('qz-q-num').textContent = currentQuizIdx + 1;
+      document.getElementById('qz-concept-badge').textContent = q.concept;
+      document.getElementById('qz-question-text').textContent = q.question;
+
+      // Update Score HUD
+      let correctCount = 0;
+      let answeredCount = 0;
+      Object.keys(quizAnswersMap).forEach(k => {
+        answeredCount++;
+        if (quizAnswersMap[k].correct) correctCount++;
+      });
+      document.getElementById('qz-score-num').textContent = correctCount;
+      const acc = answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0;
+      document.getElementById('qz-accuracy-badge').textContent = `${acc}% Acc`;
+
+      // Update 10 Pills
+      const bar = document.getElementById('qz-progress-bar');
+      bar.innerHTML = '';
+      conceptQuizQuestions.forEach((_, idx) => {
+        const pill = document.createElement('button');
+        pill.onclick = () => jumpToQuizQuestion(idx);
+        const ans = quizAnswersMap[idx];
+        const isCurrent = idx === currentQuizIdx;
+
+        let bg = 'bg-slate-800/80 text-slate-400 border-slate-700';
+        if (ans) {
+          bg = ans.correct
+            ? 'bg-emerald-500/30 text-emerald-300 border-emerald-400/60 font-bold'
+            : 'bg-rose-500/30 text-rose-300 border-rose-400/60 font-bold';
+        }
+        if (isCurrent) {
+          bg += ' ring-2 ring-cyan-400 text-white';
+        }
+
+        pill.className = `h-7 rounded-lg border text-[11px] font-mono-tech flex items-center justify-center transition hover:scale-105 ${bg}`;
+        pill.innerHTML = ans ? (ans.correct ? '✓' : '✗') : `${idx + 1}`;
+        pill.title = `Quiz ${idx + 1}: ${conceptQuizQuestions[idx].concept}`;
+        bar.appendChild(pill);
+      });
+
+      // Options Rendering
+      const optContainer = document.getElementById('qz-options-container');
+      optContainer.innerHTML = '';
+      const letters = ['A', 'B', 'C', 'D'];
+      const userAns = quizAnswersMap[currentQuizIdx];
+
+      q.options.forEach((optText, optIdx) => {
+        const btn = document.createElement('button');
+        const isSelected = userAns && userAns.selected === optIdx;
+        const isCorrectOpt = optIdx === q.correct;
+
+        let btnClass = 'w-full text-left p-3.5 rounded-xl border transition flex items-start gap-3 ';
+        let badgeClass = 'w-6 h-6 rounded-lg font-mono-tech text-xs font-bold flex items-center justify-center shrink-0 ';
+
+        if (userAns) {
+          // Question already answered
+          btn.disabled = true;
+          if (isCorrectOpt) {
+            btnClass += 'bg-emerald-950/60 border-emerald-400/70 text-emerald-100 shadow-[0_0_12px_rgba(16,185,129,0.25)]';
+            badgeClass += 'bg-emerald-500 text-slate-950';
+          } else if (isSelected && !userAns.correct) {
+            btnClass += 'bg-rose-950/60 border-rose-400/70 text-rose-200';
+            badgeClass += 'bg-rose-500 text-white';
+          } else {
+            btnClass += 'bg-slate-900/40 border-slate-800 text-slate-400 opacity-60';
+            badgeClass += 'bg-slate-800 text-slate-400';
+          }
+        } else {
+          // Question waiting for answer
+          btnClass += 'bg-slate-900/60 hover:bg-slate-800 border-slate-800 hover:border-cyan-400/50 text-slate-200 cursor-pointer active:scale-[0.99]';
+          badgeClass += 'bg-slate-800 text-cyan-300 border border-slate-700';
+          btn.onclick = () => selectQuizOption(optIdx);
+        }
+
+        btn.className = btnClass;
+        btn.innerHTML = `
+          <div class="${badgeClass}">${letters[optIdx]}</div>
+          <div class="text-xs sm:text-sm font-medium leading-relaxed">${optText}</div>
+        `;
+        optContainer.appendChild(btn);
+      });
+
+      // Explanation Box
+      const expBox = document.getElementById('qz-explanation-box');
+      if (userAns) {
+        expBox.classList.remove('hidden');
+        if (userAns.correct) {
+          expBox.className = 'rounded-2xl p-4 text-xs space-y-2 bg-emerald-950/70 border border-emerald-400/50 text-emerald-100 animate-in fade-in duration-200';
+          expBox.innerHTML = `
+            <div class="flex items-center gap-2 font-bold text-emerald-300 text-sm">
+              <span>✓ Correct!</span>
+              <span class="text-[11px] font-mono-tech text-emerald-400/80">Key Principle Cleared</span>
+            </div>
+            <div class="leading-relaxed text-slate-200">${q.explanation}</div>
+          `;
+        } else {
+          expBox.className = 'rounded-2xl p-4 text-xs space-y-2 bg-rose-950/70 border border-rose-400/50 text-rose-100 animate-in fade-in duration-200';
+          expBox.innerHTML = `
+            <div class="flex items-center gap-2 font-bold text-rose-300 text-sm">
+              <span>✗ Misconception Alert!</span>
+              <span class="text-[11px] font-mono-tech text-rose-400/80">Correct Answer is (${letters[q.correct]})</span>
+            </div>
+            <div class="leading-relaxed text-slate-200">${q.explanation}</div>
+          `;
+        }
+      } else {
+        expBox.classList.add('hidden');
+      }
+
+      // Next / Finish Button Text
+      const nextBtn = document.getElementById('qz-btn-next');
+      if (currentQuizIdx === conceptQuizQuestions.length - 1) {
+        nextBtn.textContent = Object.keys(quizAnswersMap).length === conceptQuizQuestions.length ? 'View Final Results 🏆' : 'Next Question →';
+      } else {
+        nextBtn.textContent = 'Next Question →';
+      }
+    }
+
+    function selectQuizOption(optIdx) {
+      if (quizAnswersMap[currentQuizIdx]) return;
+      const q = conceptQuizQuestions[currentQuizIdx];
+      const isCorrect = (optIdx === q.correct);
+
+      quizAnswersMap[currentQuizIdx] = {
+        selected: optIdx,
+        correct: isCorrect
+      };
+
+      renderQuizQuestion();
+
+      // Check if all 10 are answered
+      if (Object.keys(quizAnswersMap).length === conceptQuizQuestions.length) {
+        setTimeout(() => {
+          showQuizSummary();
+        }, 1200);
+      }
+    }
+
+    function jumpToQuizQuestion(idx) {
+      currentQuizIdx = idx;
+      renderQuizQuestion();
+    }
+
+    function nextQuizQuestion() {
+      if (currentQuizIdx === conceptQuizQuestions.length - 1 && Object.keys(quizAnswersMap).length === conceptQuizQuestions.length) {
+        showQuizSummary();
+        return;
+      }
+      currentQuizIdx = (currentQuizIdx + 1) % conceptQuizQuestions.length;
+      renderQuizQuestion();
+    }
+
+    function prevQuizQuestion() {
+      currentQuizIdx = (currentQuizIdx - 1 + conceptQuizQuestions.length) % conceptQuizQuestions.length;
+      renderQuizQuestion();
+    }
+
+    function showQuizSummary() {
+      const cardQ = document.getElementById('qz-card-question');
+      const cardSum = document.getElementById('qz-summary-screen');
+      cardQ.classList.add('hidden');
+      cardSum.classList.remove('hidden');
+
+      let correctCount = 0;
+      Object.keys(quizAnswersMap).forEach(k => {
+        if (quizAnswersMap[k].correct) correctCount++;
+      });
+
+      const pct = Math.round((correctCount / conceptQuizQuestions.length) * 100);
+      document.getElementById('qz-summary-score').textContent = `You scored ${correctCount} out of ${conceptQuizQuestions.length} (${pct}%)`;
+
+      const rankEl = document.getElementById('qz-summary-rank');
+      const descEl = document.getElementById('qz-summary-desc');
+
+      if (correctCount >= 9) {
+        rankEl.textContent = '⚡ KCL Grandmaster (Elite Scientist)';
+        descEl.textContent = 'Phenomenal! You have mastered every subtle detail of Kirchhoff’s Current Law, charge conservation, parallel current splitting, and node equations.';
+      } else if (correctCount >= 7) {
+        rankEl.textContent = '🏆 Circuit Specialist (Strong Concept Understanding)';
+        descEl.textContent = 'Great performance! You have a solid grasp of node charge conservation. Review the few questions you missed to achieve perfection.';
+      } else if (correctCount >= 5) {
+        rankEl.textContent = '📘 Electrical Scholar (Good Foundation)';
+        descEl.textContent = 'Good start! You understand basic current addition, but be mindful of common traps like resistor current consumption and open circuit rules.';
+      } else {
+        rankEl.textContent = '🔬 Apprentice Physicist (Keep Exploring!)';
+        descEl.textContent = 'Keep experimenting! Use the 3D lab sliders and live ammeters to watch charges flowing through junctions and try the quiz again.';
+      }
+    }
+
+    function restartQuiz() {
+      quizAnswersMap = {};
+      currentQuizIdx = 0;
+      renderQuizQuestion();
+    }
+
+    function reviewQuizQuestions() {
+      currentQuizIdx = 0;
+      renderQuizQuestion();
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast-notify');
+      const txt = document.getElementById('toast-text');
+      txt.textContent = msg;
+      toast.classList.remove('hidden');
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 3500);
     }
 
     const labelAnchors = {
@@ -1406,6 +2055,28 @@
       selectBranch('I1');
       refreshAllUI();
       animate();
+
+      // Keyboard & backdrop interactions
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          const chModal = document.getElementById('challenge-modal');
+          if (chModal && !chModal.classList.contains('hidden')) {
+            chModal.classList.add('hidden');
+          }
+          if (learnActive) {
+            toggleLearnMode();
+          }
+        }
+      });
+
+      const modalEl = document.getElementById('challenge-modal');
+      if (modalEl) {
+        modalEl.addEventListener('click', (e) => {
+          if (e.target === modalEl) {
+            toggleChallengeModal();
+          }
+        });
+      }
     };
   </script>
 </body>
