@@ -107,7 +107,7 @@
         </div>
       </div>
 
-      <!-- Experiment Preset Mode Tabs -->
+      <!-- Experiment Preset Mode Tabs & Challenge Quick Access -->
       <div class="flex flex-wrap items-center gap-1.5 bg-slate-900/90 p-1.5 rounded-xl border border-slate-700/70">
         <button id="expBtnA" onclick="setExperiment('A')" class="exp-tab px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20">
           Exp A: Object at Rest
@@ -117,6 +117,11 @@
         </button>
         <button id="expBtnC" onclick="setExperiment('C')" class="exp-tab px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-300 hover:text-white hover:bg-slate-800">
           Exp C: External Force
+        </button>
+        <button onclick="scrollToChallengeQuiz()" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-gradient-to-r from-amber-500/20 to-cyan-500/20 hover:from-amber-500/30 hover:to-cyan-500/30 text-amber-300 hover:text-amber-200 border border-amber-400/40 flex items-center gap-1.5 shadow-sm active:scale-95 ml-1" title="Jump to Interactive Challenges & Quiz">
+          <span>🎯</span>
+          <span>Challenge &amp; Quiz</span>
+          <span class="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-amber-500/30 text-amber-200 border border-amber-400/40 hidden sm:inline">10+10</span>
         </button>
       </div>
     </div>
@@ -185,6 +190,36 @@
               <button onclick="recenterOrigin()" class="glass-panel px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition" title="Reset Camera Angle">
                 🎯 View
               </button>
+            </div>
+          </div>
+
+          <!-- ACTIVE LAB CHALLENGE LIVE HUD OVERLAY (Visible when a challenge is loaded in 3D) -->
+          <div id="activeLabChallengeHud" class="hidden absolute top-16 sm:top-20 left-3 right-3 z-20 pointer-events-auto glass-panel p-3 rounded-xl border border-amber-400/50 shadow-2xl bg-slate-950/92 backdrop-blur-md transition-all duration-300">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <div class="flex items-start gap-2.5">
+                <span class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-400/40 flex items-center justify-center font-bold text-sm shrink-0">
+                  🎯
+                </span>
+                <div>
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="text-xs font-bold text-white" id="activeChTitle">Challenge 1: Overcoming Inertia at Rest</span>
+                    <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/30" id="activeChBadge">Inertia of Rest</span>
+                    <span id="activeChLiveStatus" class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30">Target: Speed &gt; 2.0 m/s</span>
+                  </div>
+                  <p class="text-[11px] text-slate-300 mt-1" id="activeChPrompt">Apply an external force to accelerate the capsule from rest.</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-1.5 self-end sm:self-center shrink-0">
+                <button onclick="verifyActiveChallengeInLab()" id="btnActiveChVerify" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 transition active:scale-95 flex items-center gap-1 shadow-md shadow-amber-500/20">
+                  <span>⚡ Verify Goal</span>
+                </button>
+                <button onclick="scrollToChallengeQuiz()" class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" title="Go to Challenge Details">
+                  <span>📋 Details</span>
+                </button>
+                <button onclick="dismissActiveChallengeHud()" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition flex items-center justify-center" title="Close Active Challenge HUD">
+                  ✕
+                </button>
+              </div>
             </div>
           </div>
 
@@ -436,87 +471,199 @@
       </div>
     </section>
 
-    <!-- MINI KNOWLEDGE CHECK -->
-    <section class="glass-panel rounded-2xl p-5 sm:p-6 mb-4">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-        <div>
-          <span class="text-[11px] font-bold uppercase tracking-widest text-cyan-400">Test Your Understanding</span>
-          <h2 class="text-lg font-extrabold text-white">✅ Mini Knowledge Check</h2>
+    <!-- ============================================================== -->
+    <!-- INTERACTIVE 3D LAB CHALLENGES & CONCEPT MASTER QUIZ SUITE       -->
+    <!-- ============================================================== -->
+    <section id="challengeQuizSection" class="glass-panel rounded-2xl p-4 sm:p-6 mb-6 border border-cyan-500/30 shadow-2xl flex flex-col gap-4 text-slate-200">
+      
+      <!-- Section Header -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500/20 to-cyan-500/20 border border-amber-400/50 flex items-center justify-center text-amber-300 font-mono font-bold text-lg shadow-[0_0_15px_rgba(245,158,11,0.25)] shrink-0">
+            <span class="text-xl">🎯</span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <h2 class="text-base sm:text-lg font-extrabold text-white tracking-tight">InertiaLab 3D Mastery Center</h2>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30">10 Lab Challenges + 10 Quizzes</span>
+            </div>
+            <p class="text-xs text-slate-400">Master Newton’s First Law, inertia of rest/motion/direction, and net zero force with hands-on practice</p>
+          </div>
         </div>
-        <div class="text-xs font-semibold px-3 py-1 rounded-lg bg-slate-900 border border-slate-700 text-cyan-300">
-          Score: <span id="quizScore">0</span> / 3 Answered Correctly
+
+        <!-- Mode Tab Selector Buttons -->
+        <div class="flex items-center gap-2 bg-slate-900/90 p-1 rounded-xl border border-slate-800 shrink-0">
+          <button id="tabBtnChallenge" onclick="switchChallengeTab('challenge')" class="py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition bg-amber-500/20 text-amber-300 border border-amber-400/50 shadow-sm">
+            <span>⚡ 3D Lab Challenges</span>
+            <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-amber-500/30 text-amber-200">10</span>
+          </button>
+          <button id="tabBtnQuiz" onclick="switchChallengeTab('quiz')" class="py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition text-slate-400 hover:text-white hover:bg-slate-800">
+            <span>🧠 Concept Master Quiz</span>
+            <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800 text-slate-300">10</span>
+          </button>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-        <!-- Question 1 -->
-        <div class="glass-card rounded-xl p-4 flex flex-col justify-between gap-3">
-          <div>
-            <div class="text-xs font-bold text-cyan-400 mb-1">Question 1</div>
-            <p class="text-sm font-semibold text-white mb-3">
-              A book is sitting on a table. Nobody touches it and no net force acts on it. What happens?
-            </p>
-            <div class="space-y-2" id="q1Options">
-              <button onclick="checkAnswer(1, 'A', this)" class="w-full text-left px-3 py-2 rounded-lg text-xs font-medium bg-slate-800/90 hover:bg-slate-700 border border-slate-700 transition">
-                A. It starts moving by itself
-              </button>
-              <button onclick="checkAnswer(1, 'B', this)" class="w-full text-left px-3 py-2 rounded-lg text-xs font-medium bg-slate-800/90 hover:bg-slate-700 border border-slate-700 transition">
-                B. It remains at rest
-              </button>
-              <button onclick="checkAnswer(1, 'C', this)" class="w-full text-left px-3 py-2 rounded-lg text-xs font-medium bg-slate-800/90 hover:bg-slate-700 border border-slate-700 transition">
-                C. It moves randomly
-              </button>
+      <!-- ================= TAB 1: 3D LAB CHALLENGES ================= -->
+      <div id="viewChallenges" class="space-y-4">
+        
+        <!-- Challenge Subheader & Progress Pills -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2">
+              <span class="text-slate-400 font-mono">Challenge <span id="chQNum" class="text-amber-400 font-bold">1</span> of 10</span>
+              <span id="chCategoryBadge" class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-400/30">Inertia of Rest</span>
             </div>
+            <span id="chSolvedCounter" class="font-mono text-[11px] text-slate-400">Solved: <span class="text-emerald-400 font-bold" id="chSolvedNum">0</span> / 10</span>
           </div>
-          <div id="q1Feedback" class="hidden text-xs p-2.5 rounded-lg"></div>
+
+          <!-- 10 Question Pill Selectors -->
+          <div id="chProgressBar" class="grid grid-cols-5 sm:grid-cols-10 gap-1.5">
+            <!-- Dynamically generated pills 1-10 -->
+          </div>
         </div>
 
-        <!-- Question 2 -->
-        <div class="glass-card rounded-xl p-4 flex flex-col justify-between gap-3">
-          <div>
-            <div class="text-xs font-bold text-cyan-400 mb-1">Question 2</div>
-            <p class="text-sm font-semibold text-white mb-3">
-              A puck glides at 8 m/s on a completely frictionless surface with no external forces. What happens next?
-            </p>
-            <div class="space-y-2" id="q2Options">
-              <button onclick="checkAnswer(2, 'A', this)" class="w-full text-left px-3 py-2 rounded-lg text-xs font-medium bg-slate-800/90 hover:bg-slate-700 border border-slate-700 transition">
-                A. It gradually slows down and stops
-              </button>
-              <button onclick="checkAnswer(2, 'B', this)" class="w-full text-left px-3 py-2 rounded-lg text-xs font-medium bg-slate-800/90 hover:bg-slate-700 border border-slate-700 transition">
-                B. It continues at 8 m/s in a straight line
-              </button>
-              <button onclick="checkAnswer(2, 'C', this)" class="w-full text-left px-3 py-2 rounded-lg text-xs font-medium bg-slate-800/90 hover:bg-slate-700 border border-slate-700 transition">
-                C. It speeds up automatically
-              </button>
-            </div>
+        <!-- Challenge Objective Prompt Card -->
+        <div class="bg-slate-950/80 p-4 rounded-2xl border border-slate-800/90 space-y-2.5">
+          <div class="text-xs uppercase font-mono tracking-wider text-amber-400 font-bold flex items-center gap-1.5">
+            <span>🎯</span> Objective &amp; Physical Scenario
           </div>
-          <div id="q2Feedback" class="hidden text-xs p-2.5 rounded-lg"></div>
+          <div class="text-xs sm:text-sm font-medium text-white leading-relaxed" id="chPrompt">
+            <!-- Injected via JS -->
+          </div>
+          
+          <!-- Context Formula Banner -->
+          <div id="chSchemaBar" class="text-xs font-mono text-cyan-300 bg-cyan-950/40 px-3 py-2 rounded-xl border border-cyan-800/50 flex items-center gap-2 flex-wrap">
+            <span class="text-cyan-400 font-bold shrink-0">Physics Principle:</span>
+            <span id="chSchemaText" class="text-slate-200 font-mono">ΣF = 0 ⟹ a = 0 (velocity remains strictly constant)</span>
+          </div>
         </div>
 
-        <!-- Question 3 -->
-        <div class="glass-card rounded-xl p-4 flex flex-col justify-between gap-3">
-          <div>
-            <div class="text-xs font-bold text-cyan-400 mb-1">Question 3</div>
-            <p class="text-sm font-semibold text-white mb-3">
-              According to Newton's First Law, what is required to change an object's speed or direction?
-            </p>
-            <div class="space-y-2" id="q3Options">
-              <button onclick="checkAnswer(3, 'A', this)" class="w-full text-left px-3 py-2 rounded-lg text-xs font-medium bg-slate-800/90 hover:bg-slate-700 border border-slate-700 transition">
-                A. More inertia
-              </button>
-              <button onclick="checkAnswer(3, 'B', this)" class="w-full text-left px-3 py-2 rounded-lg text-xs font-medium bg-slate-800/90 hover:bg-slate-700 border border-slate-700 transition">
-                B. Constant velocity
-              </button>
-              <button onclick="checkAnswer(3, 'C', this)" class="w-full text-left px-3 py-2 rounded-lg text-xs font-medium bg-slate-800/90 hover:bg-slate-700 border border-slate-700 transition">
-                C. An unbalanced external force
-              </button>
+        <!-- Input, Check Answer & Hint Toggle -->
+        <div class="space-y-2">
+          <div class="flex items-center gap-2">
+            <div class="relative flex-1">
+              <input id="chInput" type="number" step="0.01" placeholder="Enter answer (e.g. 8.0)" onkeydown="if(event.key==='Enter') checkChallengeAnswer()" class="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-4 py-2.5 font-mono text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-amber-400 transition placeholder:text-slate-600">
+              <span id="chUnitLabel" class="absolute right-3.5 top-1/2 -translate-y-1/2 font-mono text-xs text-slate-400 font-bold">m/s</span>
+            </div>
+            <button onclick="checkChallengeAnswer()" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-amber-500/20 active:scale-95 shrink-0">
+              Check
+            </button>
+            <button onclick="toggleChallengeHint()" class="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 hover:text-white border border-amber-500/30 font-semibold text-xs transition active:scale-95 shrink-0" title="Show Helpful Hint">
+              💡 Hint
+            </button>
+          </div>
+
+          <!-- Hint Box (Toggled) -->
+          <div id="chHintBox" class="hidden rounded-xl p-3 text-xs bg-amber-950/40 border border-amber-400/40 text-amber-200 leading-relaxed">
+            <!-- Injected hint text -->
+          </div>
+
+          <!-- Result Feedback Box -->
+          <div id="chFeedback" class="hidden rounded-xl p-3.5 text-xs space-y-1.5 animate-in fade-in duration-150">
+            <!-- Injected feedback -->
+          </div>
+        </div>
+
+        <!-- Bottom Navigation & 3D Lab Preset Loader -->
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-800/80">
+          <button onclick="loadChallengeInto3D()" class="px-3.5 py-2 rounded-xl text-xs font-semibold text-cyan-300 hover:text-white bg-cyan-950/50 hover:bg-cyan-900/70 border border-cyan-400/40 flex items-center gap-1.5 transition active:scale-95 shadow-sm">
+            <span>⚡</span>
+            <span>Load in 3D Lab &amp; Test</span>
+          </button>
+          <div class="flex items-center gap-2">
+            <button onclick="prevChallenge()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition">← Prev</button>
+            <button onclick="nextChallenge()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition">Next →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= TAB 2: CONCEPT MASTER QUIZ ================= -->
+      <div id="viewQuiz" class="hidden space-y-4">
+        
+        <!-- Quiz Subheader & Score HUD -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2">
+              <span class="text-slate-400 font-mono">Question <span id="qzQNum" class="text-cyan-400 font-bold">1</span> of 10</span>
+              <span id="qzConceptBadge" class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-purple-500/20 text-purple-300 border border-purple-400/30">Inertia of Motion</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="font-mono text-[11px] text-slate-400">Score: <span id="qzScoreNum" class="text-emerald-400 font-bold">0</span> / 10</span>
+              <span id="qzAccuracyBadge" class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">0% Acc</span>
             </div>
           </div>
-          <div id="q3Feedback" class="hidden text-xs p-2.5 rounded-lg"></div>
+
+          <!-- 10 Quiz Question Pills -->
+          <div id="qzProgressBar" class="grid grid-cols-5 sm:grid-cols-10 gap-1.5">
+            <!-- Dynamically generated pills 1-10 -->
+          </div>
+        </div>
+
+        <!-- Main Quiz Question Card -->
+        <div id="qzCardQuestion" class="space-y-3.5">
+          <!-- Question Prompt Card -->
+          <div class="bg-slate-950/80 p-4 rounded-2xl border border-slate-800/90">
+            <div class="text-xs uppercase font-mono tracking-wider text-cyan-400 font-bold mb-1.5 flex items-center gap-1.5">
+              <span>🧠</span> Conceptual Physics Question
+            </div>
+            <h3 id="qzQuestionText" class="text-xs sm:text-sm font-semibold text-white leading-relaxed">
+              <!-- Injected via JS -->
+            </h3>
+          </div>
+
+          <!-- Options Grid -->
+          <div id="qzOptionsContainer" class="space-y-2">
+            <!-- Dynamically generated options A, B, C, D -->
+          </div>
+
+          <!-- Detailed Explanation Box -->
+          <div id="qzExplanationBox" class="hidden rounded-2xl p-4 text-xs space-y-2 border">
+            <!-- Injected explanation -->
+          </div>
+
+          <!-- Navigation / Finish Row -->
+          <div class="flex items-center justify-between pt-2 border-t border-slate-800/80">
+            <button onclick="prevQuizQuestion()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition">
+              ← Prev Question
+            </button>
+            <button id="qzBtnNext" onclick="nextQuizQuestion()" class="px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-cyan-500/20 active:scale-95">
+              Next Question →
+            </button>
+          </div>
+        </div>
+
+        <!-- Quiz Completion Screen (Hidden by default) -->
+        <div id="qzSummaryScreen" class="hidden bg-slate-950/90 p-6 rounded-2xl border border-cyan-500/40 text-center space-y-4">
+          <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-cyan-500/20 to-emerald-500/20 border-2 border-cyan-400 mx-auto flex items-center justify-center text-3xl shadow-[0_0_20px_rgba(34,211,238,0.3)]">
+            🏆
+          </div>
+          <div>
+            <h3 class="text-lg sm:text-xl font-bold text-white tracking-tight">Quiz Completed!</h3>
+            <p id="qzSummaryScore" class="text-xs sm:text-sm text-cyan-300 font-mono mt-1">You scored 10 out of 10 (100%)</p>
+          </div>
+
+          <!-- Mastery Rank Badge -->
+          <div class="inline-block py-1.5 px-4 rounded-full bg-slate-900 border border-slate-700 text-xs font-bold text-amber-300" id="qzSummaryRank">
+            Inertia Grandmaster 🚀
+          </div>
+
+          <p id="qzSummaryDesc" class="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
+            Perfection! You have achieved complete conceptual mastery of Newton's First Law, inertia, balanced forces, and why motion continues without force in deep space.
+          </p>
+
+          <div class="flex items-center justify-center gap-3 pt-2">
+            <button onclick="reviewQuizQuestions()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition">
+              🔍 Review Answers
+            </button>
+            <button onclick="restartQuiz()" class="px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-cyan-500/20 active:scale-95">
+              ↻ Retake Quiz
+            </button>
+          </div>
         </div>
 
       </div>
+
     </section>
 
   </main>
@@ -1538,44 +1685,844 @@
     }
 
     /*************************************************************************
-     * 8. MINI KNOWLEDGE CHECK LOGIC
+     * 8. CHALLENGE & QUIZ DATA DEFINITIONS (10 + 10)
      *************************************************************************/
-    const quizCorrectAnswers = { 1: 'B', 2: 'B', 3: 'C' };
-    const quizExplanations = {
-      1: "Correct! By Newton's First Law, an object at rest remains at rest unless acted upon by an unbalanced external force.",
-      2: "Correct! With zero friction and no external forces, an object in motion keeps moving at constant velocity (8 m/s in a straight line).",
-      3: "Correct! Only an unbalanced external force can change an object's velocity (speed or direction)."
+    const challengesData = [
+      {
+        id: 1,
+        category: "Inertia of Rest",
+        prompt: "An object at rest stays at rest unless acted on by an unbalanced external force. Currently, the capsule is motionless at <b class='text-cyan-300 font-mono'>(0, 0)</b> with <b class='text-slate-300 font-mono'>ΣF = 0</b>. Click <b>'⚡ Load in 3D Lab &amp; Test'</b>, then click <b>'💨 Push / Apply External Force'</b> to supply an impulse. Accelerate the capsule so its speed exceeds <b class='text-cyan-300 font-mono'>2.0 m/s</b>.",
+        formula: "ΣF = 0 ⟹ v = 0 (at rest);  F_ext > 0 ⟹ a = F_ext / m",
+        hint: "Load this challenge into 3D, ensure Force Strength is at 10 N or higher, and click the glowing 'Push / Apply External Force' button to break the inertia of rest!",
+        unit: "m/s",
+        answer: 2.0,
+        tolerance: 0.1,
+        liveCheck: () => simState.velocity.length() >= 1.9,
+        solution: "<b>Step-by-step Physics Explanation:</b><br>According to Newton's First Law, an object at rest has zero acceleration because ΣF = 0. When you applied an external impulse (F = 10 N), it generated acceleration a = F/m = 10 m/s², overcoming the capsule's inertia of rest. Once the push ended, it maintained its new velocity smoothly!",
+        preset: { mode: 'A', friction: false, force: 10, dir: 0, speed: 0 }
+      },
+      {
+        id: 2,
+        category: "Galileo's Frictionless Glide",
+        prompt: "The capsule is gliding forward on a frictionless surface at <b class='text-cyan-400 font-mono'>v = 8.0 m/s</b>. If absolutely no external forces act on it (<b class='text-slate-300 font-mono'>ΣF = 0</b>), what will its speed be in m/s after 10 seconds of travel?",
+        formula: "ΣF = 0 ⟹ a = 0 ⟹ v(t) = v₀ = 8.0 m/s (constant velocity)",
+        hint: "Because friction is completely OFF and no thruster force is applied, acceleration is zero. Does velocity change without an external force?",
+        unit: "m/s",
+        answer: 8.0,
+        tolerance: 0.1,
+        liveCheck: () => !simState.frictionEnabled && Math.abs(simState.velocity.length() - 8.0) <= 0.5,
+        solution: "<b>Step-by-step Physics Explanation:</b><br>Without an unbalanced external force (Friction = OFF), an object in motion continues moving at constant velocity in a straight line forever! Galileo deduced that objects in daily life stop solely because friction and air drag act as opposing external forces.",
+        preset: { mode: 'B', friction: false, force: 10, dir: 0, speed: 8 }
+      },
+      {
+        id: 3,
+        category: "Friction as an Opposing Force",
+        prompt: "A student enables surface friction with coefficient <b class='text-rose-400 font-mono'>μ = 0.35</b> for a capsule of mass <b class='text-cyan-400 font-mono'>m = 1.0 kg</b> (<b class='text-slate-300 font-mono'>g = 9.8 m/s²</b>). Calculate the magnitude of the opposing kinetic friction force <b class='text-orange-400 font-mono'>f_k = μ · m · g</b> in Newtons (N).",
+        formula: "f_k = μ × m × g = 0.35 × 1.0 kg × 9.8 m/s²",
+        hint: "Multiply: 0.35 × 1.0 × 9.8. Enter the resulting force in Newtons.",
+        unit: "N",
+        answer: 3.43,
+        tolerance: 0.15,
+        liveCheck: () => simState.frictionEnabled,
+        solution: "<b>Step-by-step Physics Explanation:</b><br>f_k = 0.35 × 1.0 kg × 9.8 m/s² = <b class='text-orange-300'>3.43 N</b>.<br>This backward external force produces deceleration a = -f_k / m = -3.43 m/s². Because ΣF ≠ 0, velocity continuously decreases until the object comes to a complete halt.",
+        preset: { mode: 'B', friction: true, force: 10, dir: 0, speed: 10 }
+      },
+      {
+        id: 4,
+        category: "Mass as Measure of Inertia",
+        prompt: "Mass is the quantitative measure of an object's inertia. If you push a heavy <b class='text-purple-300 font-mono'>m = 4.0 kg</b> block with a force of <b class='text-orange-400 font-mono'>F = 12.0 N</b> on a frictionless track, calculate its instantaneous acceleration <b class='text-cyan-400 font-mono'>a = F / m</b> in m/s².",
+        formula: "a = F / m = 12.0 N / 4.0 kg",
+        hint: "Divide the force by mass: 12.0 / 4.0.",
+        unit: "m/s²",
+        answer: 3.0,
+        tolerance: 0.1,
+        liveCheck: () => true,
+        solution: "<b>Step-by-step Physics Explanation:</b><br>a = 12.0 N / 4.0 kg = <b class='text-cyan-300'>3.00 m/s²</b>.<br>Compare this to a lighter 1.0 kg capsule, which accelerates at 12.0 m/s² under the same force! Four times greater mass means four times greater inertia, resulting in 4× greater resistance to change in motion.",
+        preset: { mode: 'A', friction: false, force: 12, dir: 0, speed: 0 }
+      },
+      {
+        id: 5,
+        category: "Inertia of Direction",
+        prompt: "The capsule travels along the +X axis at 8.0 m/s. Due to inertia of direction, it cannot turn on its own. To deflect its trajectory by 90° towards the Left (-Z), at what angle in degrees must you orient the external force vector? (Enter 0, 90, 180, or 270)",
+        formula: "F_lateral ⊥ v ⟹ changes direction without immediately changing scalar speed",
+        hint: "Look at the direction selector buttons: Forward = 0°, Left = 90°, Reverse = 180°, Right = 270°.",
+        unit: "°",
+        answer: 90.0,
+        tolerance: 1.0,
+        liveCheck: () => simState.forceDirectionDeg === 90,
+        solution: "<b>Step-by-step Physics Explanation:</b><br>At <b class='text-orange-300'>90° (Left)</b>, the force acts perpendicular to the forward velocity vector. By Newton's First Law, an object continues moving in a straight line unless acted upon by a perpendicular external force that continuously alters its trajectory.",
+        preset: { mode: 'C', friction: false, force: 15, dir: 90, speed: 8 }
+      },
+      {
+        id: 6,
+        category: "Cosmic Inertia (Deep Space)",
+        prompt: "NASA's Voyager 1 spacecraft cruises through interstellar space at <b class='text-emerald-400 font-mono'>17.0 km/s</b>. How many Newtons of net rocket engine thrust (<b class='text-orange-400 font-mono'>ΣF_net</b>) are required to maintain this constant speed through the vacuum of space?",
+        formula: "ΣF_net = m × a = m × 0 = 0 N",
+        hint: "In deep space, there is no air friction or surface drag. Does constant speed require continuous thrust?",
+        unit: "N",
+        answer: 0.0,
+        tolerance: 0.05,
+        liveCheck: () => !simState.frictionEnabled,
+        solution: "<b>Step-by-step Physics Explanation:</b><br><b class='text-emerald-300'>0 Newtons!</b> In the vacuum of deep space where friction and gravitational pull are negligible, an object in motion maintains constant velocity forever with zero engine thrust and zero fuel consumption!",
+        preset: { mode: 'B', friction: false, force: 0, dir: 0, speed: 17 }
+      },
+      {
+        id: 7,
+        category: "Inertia in Vehicles (Sudden Braking)",
+        prompt: "A city bus cruises at <b class='text-cyan-400 font-mono'>12.0 m/s</b>. When the driver hits emergency brakes, the bus stops rapidly. At the exact instant the brakes are tapped, what is the forward velocity in m/s of an unrestrained passenger relative to the road before seatbelts or grab handles act?",
+        formula: "v_passenger = v_bus_initial = 12.0 m/s (due to inertia of motion)",
+        hint: "The brakes apply force to the bus tires and chassis, not to the passenger's floating upper torso.",
+        unit: "m/s",
+        answer: 12.0,
+        tolerance: 0.2,
+        liveCheck: () => true,
+        solution: "<b>Step-by-step Physics Explanation:</b><br><b class='text-cyan-300'>12.0 m/s!</b> The braking force is applied by the road friction onto the bus tires and chassis. Due to inertia of motion, the passenger continues forward at 12.0 m/s until an external restraint (seatbelt or handrail) applies an opposing force to decelerate them.",
+        preset: { mode: 'B', friction: false, force: 10, dir: 0, speed: 12 }
+      },
+      {
+        id: 8,
+        category: "Stopping Distance on Rough Surface",
+        prompt: "A 1.0 kg puck slides onto a rough surface with initial speed <b class='text-cyan-400 font-mono'>v₀ = 7.0 m/s</b>. If kinetic friction causes deceleration <b class='text-rose-400 font-mono'>a = -3.5 m/s²</b>, calculate the stopping distance <b class='text-amber-400 font-mono'>d = v₀² / (2|a|)</b> in meters (m).",
+        formula: "v² = v₀² + 2ad ⟹ 0 = 7.0² - 2(3.5)d ⟹ d = 49 / 7.0",
+        hint: "Compute 7.0 squared (49), then divide by 2 × 3.5 (7.0).",
+        unit: "m",
+        answer: 7.0,
+        tolerance: 0.2,
+        liveCheck: () => simState.frictionEnabled,
+        solution: "<b>Step-by-step Physics Explanation:</b><br>d = v₀² / (2|a|) = 7.0² / (2 × 3.5) = 49 / 7.0 = <b class='text-amber-300'>7.00 m</b>.<br>The puck glides 7.0 meters before the continuous external friction force removes all kinetic energy.",
+        preset: { mode: 'B', friction: true, force: 10, dir: 0, speed: 7 }
+      },
+      {
+        id: 9,
+        category: "Dynamic Equilibrium (Balanced Forces)",
+        prompt: "A high-speed train travels at a constant velocity of <b class='text-emerald-400 font-mono'>30.0 m/s</b>. Its electric locomotives produce a forward tractive force of <b class='text-cyan-400 font-mono'>+15,000 N</b>. What must be the total magnitude of aerodynamic air drag and track friction opposing the train in Newtons?",
+        formula: "ΣF = F_engine - F_drag = 0 ⟹ F_drag = F_engine = 15,000 N",
+        hint: "For constant velocity, net force must be zero. The opposing force must exactly equal the forward force.",
+        unit: "N",
+        answer: 15000.0,
+        tolerance: 100.0,
+        liveCheck: () => true,
+        solution: "<b>Step-by-step Physics Explanation:</b><br><b class='text-cyan-300'>15,000 N</b>.<br>When forces are completely balanced (ΣF = 0), acceleration is zero (a = 0), so the object maintains its speed (30 m/s) continuously. Dynamic equilibrium does NOT mean stationary; it means constant velocity!",
+        preset: { mode: 'B', friction: false, force: 15, dir: 0, speed: 15 }
+      },
+      {
+        id: 10,
+        category: "Instantaneous Impulse (Tablecloth Trick)",
+        prompt: "A card holding a coin is flicked horizontally in <b class='text-purple-300 font-mono'>Δt = 0.005 s</b> with small friction force <b class='text-rose-400 font-mono'>f = 0.4 N</b> on a <b class='text-cyan-400 font-mono'>0.02 kg</b> coin. Calculate the change in horizontal velocity imparted to the coin: <b class='text-emerald-400 font-mono'>Δv = (f · Δt) / m</b> in m/s.",
+        formula: "Δv = (f × Δt) / m = (0.4 × 0.005) / 0.02",
+        hint: "Numerator: 0.4 × 0.005 = 0.002. Divide 0.002 by 0.02.",
+        unit: "m/s",
+        answer: 0.1,
+        tolerance: 0.02,
+        liveCheck: () => true,
+        solution: "<b>Step-by-step Physics Explanation:</b><br>Δv = (0.4 × 0.005) / 0.02 = <b class='text-emerald-300'>0.10 m/s</b>.<br>Because the duration Δt is so tiny, the imparted impulse J = F Δt is practically negligible! The coin's inertia keeps it in place horizontally, and gravity pulls it straight down into the beaker.",
+        preset: { mode: 'A', friction: false, force: 2, dir: 0, speed: 0 }
+      }
+    ];
+
+    const quizData = [
+      {
+        id: 1,
+        category: "Core Definition",
+        question: "An interstellar spaceship is traveling through deep space at a constant velocity of 25,000 km/h in a straight line with its engines completely shut off. What is the net external force acting on the ship?",
+        options: [
+          "Exactly 0 Newtons, because constant velocity in a straight line requires zero net force.",
+          "A massive forward force equal to the ship's mass multiplied by its speed.",
+          "A small forward force just enough to overcome cosmic inertia.",
+          "A force that depends on the temperature of the shut-off rocket nozzles."
+        ],
+        correctIndex: 0,
+        explanation: {
+          correctWhy: "Newton's First Law states that if an object moves with constant velocity (constant speed in a straight line), its acceleration is zero (a = 0). By F_net = m · a, the net external force must be precisely zero!",
+          pitfall: "Aristotle mistakenly believed that motion requires a continuous force. Newton and Galileo proved that motion requires NO force to persist; only changes in motion (acceleration) require force!"
+        }
+      },
+      {
+        id: 2,
+        category: "Inertia of Rest",
+        question: "A physics textbook sits completely motionless on a table. Why doesn't it spontaneously start sliding across the room?",
+        options: [
+          "Friction is holding it, but if friction were removed it would accelerate instantly on its own.",
+          "The upward normal force balances gravity, and without an unbalanced horizontal force, its inertia of rest keeps its velocity at zero.",
+          "Its mass creates an attractive magnetic force with the table legs.",
+          "It has no inertia because it is not currently moving."
+        ],
+        correctIndex: 1,
+        explanation: {
+          correctWhy: "An object at rest possesses inertia of rest—the tendency to maintain its stationary state. All vertical forces (gravity and normal force) are in balance (ΣF_y = 0), and with zero net horizontal force, acceleration remains strictly zero.",
+          pitfall: "All massive objects possess inertia, whether moving or stationary! Inertia is a measure of resistance to changes in motion, not motion itself."
+        }
+      },
+      {
+        id: 3,
+        category: "Inertia of Motion",
+        question: "When a metro train driver applies the brakes suddenly, standees lurch forward. What is the physical reason for this forward lurch?",
+        options: [
+          "An invisible forward force pushes passengers from behind.",
+          "The braking force is applied to the train floor and passengers' shoes, while the upper torso continues moving forward at the train's prior speed due to inertia.",
+          "Air pressure inside the train rises at the rear and drops at the front.",
+          "Gravity shifts horizontally during braking."
+        ],
+        correctIndex: 1,
+        explanation: {
+          correctWhy: "Prior to braking, the train and passenger move at the same speed. The braking mechanism exerts backward force onto the train's wheels and floor. Friction grips the passenger's feet, but unless held, the upper body continues at original speed due to inertia of motion!",
+          pitfall: "There is no actual forward force pushing the passenger. The passenger is merely continuing their existing forward state of motion as the train decelerates beneath them."
+        }
+      },
+      {
+        id: 4,
+        category: "Inertia of Direction",
+        question: "When a car takes a sharp turn to the left, passengers feel flung toward the right door. What actually causes this sensation?",
+        options: [
+          "An outward centrifugal force generated by the car's steering column.",
+          "Passengers naturally tend to continue moving in their original straight-line direction due to inertia of direction, while the car turns underneath them.",
+          "The engine's exhaust gas pushes against the passenger cabin.",
+          "The Earth's magnetic field repels the vehicle passengers."
+        ],
+        correctIndex: 1,
+        explanation: {
+          correctWhy: "Newton's First Law specifies that motion continues 'in a straight line'. When the tires steer the car left, the passenger's body tends to continue moving straight ahead. The right door turns inward toward the passenger, giving the sensation of being thrown outward.",
+          pitfall: "'Centrifugal force' is an apparent (inertial) effect observed in a rotating frame, not a real physical force pushing you outward."
+        }
+      },
+      {
+        id: 5,
+        category: "Galileo's Insight",
+        question: "In Galileo's famous double inclined plane thought experiment, a smooth ball released from height h rolls down a slope and up an opposing slope. If the opposing slope is made completely horizontal and frictionless, what will the ball do?",
+        options: [
+          "Gradually lose its energy and stop after a few meters.",
+          "Accelerate infinitely to the speed of light.",
+          "Roll on forever at constant speed in a straight line, as it never reaches height h.",
+          "Reverse its direction and roll backward to the starting ramp."
+        ],
+        correctIndex: 2,
+        explanation: {
+          correctWhy: "Galileo observed that a ball always seeks to reach its original release height h. If the second surface is perfectly flat and frictionless, the ball can never reach height h, so its motion must continue indefinitely at uniform speed in a straight line!",
+          pitfall: "This brilliant thought experiment overturned centuries of Aristotelian dogma and directly led to Newton formulating his First Law of Motion."
+        }
+      },
+      {
+        id: 6,
+        category: "Quantitative Measure",
+        question: "Why does a 16-pound bowling ball require much more effort to push, stop, or turn compared to a lightweight tennis ball?",
+        options: [
+          "Because the bowling ball contains more mass, and mass is the quantitative measure of inertia.",
+          "Because bowling balls have a higher coefficient of aerodynamic drag.",
+          "Because the tennis ball generates its own propulsion.",
+          "Because gravity only affects objects heavier than 10 pounds."
+        ],
+        correctIndex: 0,
+        explanation: {
+          correctWhy: "In classical physics, mass (m) is the quantitative measure of inertia. The more mass an object has, the more it resists changes to its velocity (a = F/m), requiring a proportionally larger force to achieve the same acceleration.",
+          pitfall: "Mass and weight are distinct: mass is the fundamental measure of inertia (in kg), whereas weight is the gravitational force acting on that mass (W = mg)."
+        }
+      },
+      {
+        id: 7,
+        category: "Space Mechanics",
+        question: "A satellite is launched into a high orbit around Earth, far outside atmospheric resistance. Why doesn't it run out of gas and fall after its propulsion rockets turn off?",
+        options: [
+          "Earth's magnetic poles continually recharge the thruster fuel tanks.",
+          "In space vacuum with negligible drag, its forward tangential speed persists by inertia, while gravity continually bends its path into a closed orbit.",
+          "Solar wind continuously pushes the spacecraft forward with thousands of Newtons of thrust.",
+          "Orbits operate outside the laws of mechanics."
+        ],
+        correctIndex: 1,
+        explanation: {
+          correctWhy: "An orbit is continuous free-fall! The satellite's forward inertia would carry it in a straight line off into space, but Earth's gravity curves its trajectory into a circle or ellipse. No fuel is burned to maintain orbital speed.",
+          pitfall: "Many believe rockets burn fuel continuously in orbit. In reality, orbital mechanics is almost entirely unpowered inertial coasting!"
+        }
+      },
+      {
+        id: 8,
+        category: "Safety Applications",
+        question: "Modern cars are mandated to have padded headrests behind seats. What specific injury does a headrest prevent using the principles of inertia?",
+        options: [
+          "It prevents your head from moving forward during sudden braking.",
+          "It prevents whiplash during a rear-end collision, when the car seat pushes the torso forward but the head tends to remain at rest due to inertia.",
+          "It absorbs high-frequency sound waves from the engine.",
+          "It reduces aerodynamic drag inside the passenger cabin."
+        ],
+        correctIndex: 1,
+        explanation: {
+          correctWhy: "In a rear-end collision, the car and seat back are pushed violently forward into the passenger's torso. Due to inertia of rest, the head tends to stay in place, snapping backward relative to the shoulders. The headrest supports the head so it accelerates forward together with the body, preventing severe cervical spine damage.",
+          pitfall: "Seatbelts protect against forward deceleration (inertia of motion), while headrests protect against rear-end impacts (inertia of rest of the head relative to the accelerating seat)."
+        }
+      },
+      {
+        id: 9,
+        category: "Equilibrium Dynamics",
+        question: "An airplane flies at a steady altitude of 10,000 m at a constant velocity of 900 km/h in a straight line. Which statement accurately describes the forces on the airplane?",
+        options: [
+          "Forward engine thrust is much greater than drag to keep the plane moving forward.",
+          "Lift equals weight and thrust equals drag; the net force is exactly zero (ΣF = 0).",
+          "There are zero physical forces acting on the airplane.",
+          "Gravity does not act at 10,000 meters altitude."
+        ],
+        correctIndex: 1,
+        explanation: {
+          correctWhy: "Cruising at constant speed in a straight line means acceleration is zero. Therefore, all forces are balanced: Engine Thrust = Aerodynamic Drag (ΣF_x = 0), and Wing Lift = Aircraft Weight (ΣF_y = 0). Net force is zero!",
+          pitfall: "A net force of zero does NOT mean there are no forces acting! It means all acting forces cancel each other out in dynamic equilibrium."
+        }
+      },
+      {
+        id: 10,
+        category: "Impulse & Inertia",
+        question: "A magician swiftly yanks a smooth silk tablecloth out from beneath heavy porcelain dishes without knocking them off the table. Why do the dishes stay in place?",
+        options: [
+          "The magician uses magnets hidden inside the porcelain.",
+          "The pulling force acts for such an extremely short time (Δt → 0) that the frictional impulse (J = F · Δt) is too small to overcome the dishes' inertia of rest.",
+          "The dishes have zero friction with the tablecloth.",
+          "Air pressure presses downward with infinite force during rapid motion."
+        ],
+        correctIndex: 1,
+        explanation: {
+          correctWhy: "Impulse equals change in momentum: J = F Δt = m Δv. By yanking the cloth extremely fast, the interaction time Δt is near zero, so the imparted velocity Δv is negligible. The dishes' heavy mass (large inertia of rest) keeps them practically motionless.",
+          pitfall: "If the magician pulls slowly, the duration Δt is large, imparting enough impulse to drag the dishes off the table and smash them!"
+        }
+      }
+    ];
+
+    /*************************************************************************
+     * 9. 3D LAB CHALLENGE ENGINE
+     *************************************************************************/
+    let activeChallengeId = null;
+
+    const ChallengeEngine = {
+      currentIdx: 0,
+      solved: new Set(),
+      hintsOpen: new Set(),
+
+      init() {
+        this.render();
+      },
+
+      render() {
+        const ch = challengesData[this.currentIdx];
+        document.getElementById('chQNum').textContent = (this.currentIdx + 1);
+        document.getElementById('chCategoryBadge').textContent = ch.category;
+        document.getElementById('chPrompt').innerHTML = ch.prompt;
+        document.getElementById('chSchemaText').textContent = ch.formula;
+        document.getElementById('chUnitLabel').textContent = ch.unit;
+        document.getElementById('chSolvedNum').textContent = this.solved.size;
+
+        const inputEl = document.getElementById('chInput');
+        inputEl.value = '';
+        inputEl.placeholder = `Enter answer in ${ch.unit} (e.g. ${ch.answer})`;
+
+        const hintBox = document.getElementById('chHintBox');
+        hintBox.innerHTML = `<b>💡 Helpful Clue:</b> ${ch.hint}`;
+        if (this.hintsOpen.has(this.currentIdx)) {
+          hintBox.classList.remove('hidden');
+        } else {
+          hintBox.classList.add('hidden');
+        }
+
+        const feedbackBox = document.getElementById('chFeedback');
+        if (this.solved.has(this.currentIdx)) {
+          feedbackBox.className = 'rounded-xl p-3.5 text-xs space-y-1.5 bg-emerald-950/70 border border-emerald-400/50 text-emerald-200 block';
+          feedbackBox.innerHTML = `
+            <div class="font-bold text-emerald-300 flex items-center gap-1.5">
+              <span>✅</span> Solved Correctly!
+            </div>
+            <div class="leading-relaxed">${ch.solution}</div>
+          `;
+        } else {
+          feedbackBox.className = 'hidden rounded-xl p-3.5 text-xs space-y-1.5';
+          feedbackBox.innerHTML = '';
+        }
+
+        this.renderProgressPills();
+      },
+
+      renderProgressPills() {
+        const container = document.getElementById('chProgressBar');
+        container.innerHTML = '';
+        challengesData.forEach((c, idx) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.onclick = () => {
+            ChallengeEngine.currentIdx = idx;
+            ChallengeEngine.render();
+          };
+          const isCurrent = idx === this.currentIdx;
+          const isSolved = this.solved.has(idx);
+
+          let base = "h-8 rounded-lg font-mono text-xs font-semibold flex items-center justify-center transition ";
+          if (isCurrent) {
+            base += isSolved
+              ? "bg-emerald-500 text-slate-950 ring-2 ring-emerald-300 font-bold "
+              : "bg-amber-500 text-slate-950 ring-2 ring-amber-300 font-bold shadow-md ";
+          } else if (isSolved) {
+            base += "bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 hover:bg-emerald-500/30 ";
+          } else {
+            base += "bg-slate-800/80 text-slate-400 border border-slate-700 hover:text-white hover:bg-slate-700 ";
+          }
+
+          btn.className = base;
+          btn.textContent = (idx + 1);
+          btn.title = `Challenge ${idx + 1}: ${c.category}`;
+          container.appendChild(btn);
+        });
+      },
+
+      checkAnswer() {
+        const ch = challengesData[this.currentIdx];
+        const inputVal = parseFloat(document.getElementById('chInput').value);
+        const feedbackBox = document.getElementById('chFeedback');
+
+        if (isNaN(inputVal)) {
+          feedbackBox.className = 'rounded-xl p-3 text-xs bg-amber-950/60 border border-amber-400/50 text-amber-200 block';
+          feedbackBox.innerHTML = '⚠️ Please enter a numeric value before checking.';
+          return;
+        }
+
+        const diff = Math.abs(inputVal - ch.answer);
+        if (diff <= ch.tolerance) {
+          this.markSolved(this.currentIdx);
+        } else {
+          feedbackBox.className = 'rounded-xl p-3.5 text-xs space-y-1 bg-rose-950/70 border border-rose-500/50 text-rose-200 block animate-in fade-in duration-200';
+          feedbackBox.innerHTML = `
+            <div class="font-bold text-rose-300 flex items-center gap-1.5">
+              <span>❌</span> Not Quite (${inputVal} ${ch.unit})
+            </div>
+            <p class="leading-relaxed">Review the question details. Remember: without external forces, velocity remains constant (a = 0). Click <b>💡 Hint</b> for assistance!</p>
+          `;
+        }
+      },
+
+      markSolved(idx) {
+        const ch = challengesData[idx];
+        this.solved.add(idx);
+        document.getElementById('chSolvedNum').textContent = this.solved.size;
+        const feedbackBox = document.getElementById('chFeedback');
+        feedbackBox.className = 'rounded-xl p-3.5 text-xs space-y-1.5 bg-emerald-950/70 border border-emerald-400/50 text-emerald-200 block animate-in fade-in duration-200';
+        feedbackBox.innerHTML = `
+          <div class="font-bold text-emerald-300 flex items-center gap-1.5 text-sm">
+            <span>🎉</span> Correct Answer! Excellent Work!
+          </div>
+          <div class="leading-relaxed">${ch.solution}</div>
+          <div class="pt-1 flex items-center gap-2">
+            <button onclick="loadChallengeInto3D()" class="px-2.5 py-1 rounded-md bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-400/40 font-semibold text-[11px] transition">
+              ⚡ Verify Live in 3D Simulation
+            </button>
+          </div>
+        `;
+        this.renderProgressPills();
+        updateActiveHudState();
+      },
+
+      toggleHint() {
+        const hintBox = document.getElementById('chHintBox');
+        if (this.hintsOpen.has(this.currentIdx)) {
+          this.hintsOpen.delete(this.currentIdx);
+          hintBox.classList.add('hidden');
+        } else {
+          this.hintsOpen.add(this.currentIdx);
+          hintBox.classList.remove('hidden');
+        }
+      },
+
+      prev() {
+        if (this.currentIdx > 0) {
+          this.currentIdx--;
+          this.render();
+        }
+      },
+
+      next() {
+        if (this.currentIdx < challengesData.length - 1) {
+          this.currentIdx++;
+          this.render();
+        }
+      }
     };
-    const answeredCorrectly = { 1: false, 2: false, 3: false };
 
-    function checkAnswer(qNum, choice, btnEl) {
-      const isCorrect = choice === quizCorrectAnswers[qNum];
-      const feedbackEl = document.getElementById(`q${qNum}Feedback`);
-      const optionsContainer = document.getElementById(`q${qNum}Options`);
+    /*************************************************************************
+     * 10. CONCEPT MASTER QUIZ ENGINE
+     *************************************************************************/
+    const QuizEngine = {
+      currentIdx: 0,
+      userAnswers: new Array(quizData.length).fill(null),
+      score: 0,
+      isCompleted: false,
 
-      // Reset sibling button styles
-      Array.from(optionsContainer.children).forEach((b) => {
-        b.className = 'w-full text-left px-3 py-2 rounded-lg text-xs font-medium bg-slate-800/90 hover:bg-slate-700 border border-slate-700 transition';
-      });
+      init() {
+        this.render();
+      },
 
-      feedbackEl.classList.remove('hidden');
-      if (isCorrect) {
-        btnEl.className = 'w-full text-left px-3 py-2 rounded-lg text-xs font-bold bg-emerald-500/25 text-emerald-300 border border-emerald-500/50 transition';
-        feedbackEl.className = 'text-xs p-2.5 rounded-lg bg-emerald-500/15 text-emerald-200 border border-emerald-500/30';
-        feedbackEl.textContent = '✅ ' + quizExplanations[qNum];
-        answeredCorrectly[qNum] = true;
+      render() {
+        const q = quizData[this.currentIdx];
+        document.getElementById('qzQNum').textContent = (this.currentIdx + 1);
+        document.getElementById('qzConceptBadge').textContent = q.category;
+        document.getElementById('qzScoreNum').textContent = this.score;
+
+        const answeredCount = this.userAnswers.filter((a) => a !== null).length;
+        const accuracy = answeredCount > 0 ? Math.round((this.score / answeredCount) * 100) : 0;
+        document.getElementById('qzAccuracyBadge').textContent = `${accuracy}% Acc`;
+
+        document.getElementById('qzQuestionText').innerHTML = q.question;
+
+        const container = document.getElementById('qzOptionsContainer');
+        container.innerHTML = '';
+        const letters = ['A', 'B', 'C', 'D'];
+        const selected = this.userAnswers[this.currentIdx];
+        const hasAnswered = selected !== null;
+
+        q.options.forEach((optText, optIdx) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.disabled = hasAnswered;
+          btn.onclick = () => QuizEngine.selectOption(optIdx);
+
+          let base = "w-full p-3 rounded-xl border text-left font-medium text-xs sm:text-sm flex items-start gap-3 transition ";
+
+          if (!hasAnswered) {
+            base += "bg-slate-900/80 hover:bg-slate-800 border-slate-800 text-slate-200 hover:border-slate-700 active:scale-[0.99]";
+          } else {
+            if (optIdx === q.correctIndex) {
+              base += "bg-emerald-950/70 border-emerald-400/80 text-emerald-200 shadow-sm font-semibold";
+            } else if (optIdx === selected) {
+              base += "bg-rose-950/70 border-rose-500/80 text-rose-200";
+            } else {
+              base += "bg-slate-950/40 border-slate-900 text-slate-500 opacity-60";
+            }
+          }
+
+          btn.className = base;
+          btn.innerHTML = `
+            <span class="w-6 h-6 rounded-lg font-mono font-bold text-xs flex items-center justify-center shrink-0 ${
+              hasAnswered
+                ? optIdx === q.correctIndex
+                  ? 'bg-emerald-500 text-slate-950 font-black'
+                  : optIdx === selected
+                  ? 'bg-rose-500 text-white font-black'
+                  : 'bg-slate-800 text-slate-500'
+                : 'bg-slate-800 text-cyan-400'
+            }">${letters[optIdx]}</span>
+            <span class="flex-1 leading-snug">${optText}</span>
+            ${
+              hasAnswered
+                ? optIdx === q.correctIndex
+                  ? '<span class="text-emerald-400 font-bold shrink-0">✓</span>'
+                  : optIdx === selected
+                  ? '<span class="text-rose-400 font-bold shrink-0">✕</span>'
+                  : ''
+                : ''
+            }
+          `;
+          container.appendChild(btn);
+        });
+
+        // Explanation Box
+        const expBox = document.getElementById('qzExplanationBox');
+        if (hasAnswered) {
+          const isCorrect = selected === q.correctIndex;
+          expBox.className = `rounded-2xl p-4 text-xs space-y-2 border ${
+            isCorrect
+              ? 'bg-emerald-950/50 border-emerald-500/40 text-emerald-200'
+              : 'bg-rose-950/50 border-rose-500/40 text-rose-200'
+          } block animate-in fade-in duration-200`;
+
+          expBox.innerHTML = `
+            <div class="flex items-center gap-2 font-bold text-sm ${isCorrect ? 'text-emerald-300' : 'text-rose-300'}">
+              <span>${isCorrect ? '✅ Correct! Concept Breakdown:' : '💡 Insight & Concept Clarification:'}</span>
+            </div>
+            <p class="text-slate-200 leading-relaxed font-sans">${q.explanation.correctWhy}</p>
+            <div class="pt-1.5 border-t border-slate-800/80 flex items-start gap-2 text-amber-300/90">
+              <span class="text-amber-400 shrink-0">⚠️</span>
+              <span><b>Common Trap:</b> ${q.explanation.pitfall}</span>
+            </div>
+          `;
+        } else {
+          expBox.className = 'hidden rounded-2xl p-4 text-xs space-y-2';
+          expBox.innerHTML = '';
+        }
+
+        const btnNext = document.getElementById('qzBtnNext');
+        if (this.currentIdx === quizData.length - 1) {
+          btnNext.textContent = 'See Final Results 🏆';
+        } else {
+          btnNext.textContent = 'Next Question →';
+        }
+
+        this.renderProgressPills();
+      },
+
+      renderProgressPills() {
+        const container = document.getElementById('qzProgressBar');
+        container.innerHTML = '';
+        quizData.forEach((q, idx) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.onclick = () => {
+            QuizEngine.currentIdx = idx;
+            QuizEngine.render();
+          };
+          const isCurrent = idx === this.currentIdx;
+          const ans = this.userAnswers[idx];
+
+          let base = "h-8 rounded-lg font-mono text-xs font-semibold flex items-center justify-center transition ";
+          if (isCurrent) {
+            base += "ring-2 ring-cyan-400 font-bold ";
+          }
+          if (ans === null) {
+            base += "bg-slate-800/80 text-slate-400 border border-slate-700 hover:text-white ";
+          } else if (ans === q.correctIndex) {
+            base += "bg-emerald-500/25 text-emerald-300 border border-emerald-400/50 ";
+          } else {
+            base += "bg-rose-500/25 text-rose-300 border border-rose-400/50 ";
+          }
+
+          btn.className = base;
+          btn.textContent = (idx + 1);
+          btn.title = `Question ${idx + 1}: ${q.category}`;
+          container.appendChild(btn);
+        });
+      },
+
+      selectOption(optIdx) {
+        if (this.userAnswers[this.currentIdx] !== null) return;
+        this.userAnswers[this.currentIdx] = optIdx;
+        const q = quizData[this.currentIdx];
+        if (optIdx === q.correctIndex) {
+          this.score++;
+        }
+        this.render();
+
+        const allAnswered = this.userAnswers.every((a) => a !== null);
+        if (allAnswered && !this.isCompleted) {
+          this.isCompleted = true;
+        }
+      },
+
+      prev() {
+        if (this.currentIdx > 0) {
+          this.currentIdx--;
+          this.render();
+        }
+      },
+
+      next() {
+        if (this.currentIdx < quizData.length - 1) {
+          this.currentIdx++;
+          this.render();
+        } else {
+          this.showSummary();
+        }
+      },
+
+      showSummary() {
+        document.getElementById('qzCardQuestion').classList.add('hidden');
+        const summary = document.getElementById('qzSummaryScreen');
+        summary.classList.remove('hidden');
+
+        const finalScore = this.score;
+        const pct = Math.round((finalScore / quizData.length) * 100);
+        document.getElementById('qzSummaryScore').textContent = `You scored ${finalScore} out of ${quizData.length} (${pct}%)`;
+
+        let rank = "Inertia Apprentice 🔬";
+        let desc = "Good effort! Review the conceptual traps and experiment with the 3D lab to build a rock-solid foundation in classical mechanics.";
+        if (pct === 100) {
+          rank = "Inertia Grandmaster 🚀";
+          desc = "Perfection! You have achieved complete conceptual mastery of Newton's First Law, inertia, balanced forces, and why motion continues without force in deep space.";
+        } else if (pct >= 80) {
+          rank = "Newtonian Virtuoso 🌟";
+          desc = "Superb performance! You clearly understand the law of inertia across both translational and directional physical frames.";
+        } else if (pct >= 60) {
+          rank = "Mechanics Specialist ⚖️";
+          desc = "Solid work! With a quick review of balanced forces and Galileo's inclined planes, you'll reach 100% mastery.";
+        }
+
+        document.getElementById('qzSummaryRank').textContent = rank;
+        document.getElementById('qzSummaryDesc').textContent = desc;
+      },
+
+      restart() {
+        this.currentIdx = 0;
+        this.userAnswers = new Array(quizData.length).fill(null);
+        this.score = 0;
+        this.isCompleted = false;
+        document.getElementById('qzSummaryScreen').classList.add('hidden');
+        document.getElementById('qzCardQuestion').classList.remove('hidden');
+        this.render();
+      },
+
+      review() {
+        this.currentIdx = 0;
+        document.getElementById('qzSummaryScreen').classList.add('hidden');
+        document.getElementById('qzCardQuestion').classList.remove('hidden');
+        this.render();
+      }
+    };
+
+    /*************************************************************************
+     * 11. TAB & IN-LAB ACTIVE CHALLENGE BRIDGE CONTROLS
+     *************************************************************************/
+    function switchChallengeTab(tabName) {
+      const btnCh = document.getElementById('tabBtnChallenge');
+      const btnQz = document.getElementById('tabBtnQuiz');
+      const viewCh = document.getElementById('viewChallenges');
+      const viewQz = document.getElementById('viewQuiz');
+
+      if (tabName === 'challenge') {
+        btnCh.className = "py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition bg-amber-500/20 text-amber-300 border border-amber-400/50 shadow-sm";
+        btnQz.className = "py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition text-slate-400 hover:text-white hover:bg-slate-800";
+        viewCh.classList.remove('hidden');
+        viewQz.classList.add('hidden');
+        ChallengeEngine.render();
       } else {
-        btnEl.className = 'w-full text-left px-3 py-2 rounded-lg text-xs font-bold bg-rose-500/25 text-rose-300 border border-rose-500/50 transition';
-        feedbackEl.className = 'text-xs p-2.5 rounded-lg bg-rose-500/15 text-rose-200 border border-rose-500/30';
-        feedbackEl.textContent = '❌ Not quite! Think about what happens when no net external force acts on the object. Try again!';
+        btnQz.className = "py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition bg-cyan-500/20 text-cyan-300 border border-cyan-400/50 shadow-sm";
+        btnCh.className = "py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition text-slate-400 hover:text-white hover:bg-slate-800";
+        viewQz.classList.remove('hidden');
+        viewCh.classList.add('hidden');
+        QuizEngine.render();
+      }
+    }
+
+    function checkChallengeAnswer() {
+      ChallengeEngine.checkAnswer();
+    }
+
+    function toggleChallengeHint() {
+      ChallengeEngine.toggleHint();
+    }
+
+    function prevChallenge() {
+      ChallengeEngine.prev();
+    }
+
+    function nextChallenge() {
+      ChallengeEngine.next();
+    }
+
+    function prevQuizQuestion() {
+      QuizEngine.prev();
+    }
+
+    function nextQuizQuestion() {
+      QuizEngine.next();
+    }
+
+    function restartQuiz() {
+      QuizEngine.restart();
+    }
+
+    function reviewQuizQuestions() {
+      QuizEngine.review();
+    }
+
+    function scrollToChallengeQuiz() {
+      const el = document.getElementById('challengeQuizSection');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    function loadChallengeInto3D() {
+      const ch = challengesData[ChallengeEngine.currentIdx];
+      activeChallengeId = ch.id;
+
+      // Apply Preset to Main 3D Lab
+      if (ch.preset) {
+        setExperiment(ch.preset.mode);
+        if (ch.preset.friction !== undefined) {
+          toggleFriction(ch.preset.friction);
+        }
+        if (ch.preset.force !== undefined) {
+          simState.forceMagnitude = ch.preset.force;
+          const forceSlider = document.getElementById('forceSlider');
+          if (forceSlider) forceSlider.value = ch.preset.force;
+          const forceVal = document.getElementById('forceSliderVal');
+          if (forceVal) forceVal.textContent = ch.preset.force;
+        }
+        if (ch.preset.dir !== undefined) {
+          setForceDirection(ch.preset.dir);
+        }
+        if (ch.preset.speed !== undefined) {
+          simState.velocity.set(ch.preset.speed, 0, 0);
+          const speedSlider = document.getElementById('speedSlider');
+          if (speedSlider) speedSlider.value = ch.preset.speed;
+          const speedVal = document.getElementById('speedSliderVal');
+          if (speedVal) speedVal.textContent = ch.preset.speed.toFixed(1);
+        }
+        if (ch.preset.mass !== undefined) {
+          simState.mass = ch.preset.mass;
+        } else {
+          simState.mass = 1.0;
+        }
       }
 
-      const total = Object.values(answeredCorrectly).filter(Boolean).length;
-      document.getElementById('quizScore').textContent = total;
+      updateActiveHudState();
+
+      // Show Active Challenge HUD in 3D Viewport
+      const hud = document.getElementById('activeLabChallengeHud');
+      if (hud) {
+        hud.classList.remove('hidden');
+      }
+
+      // Smooth scroll up to 3D Viewport so student can experiment immediately
+      const viewport = document.getElementById('canvas3DContainer');
+      if (viewport) {
+        viewport.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+
+      updateFeedbackBanner('⚡', `Loaded Challenge ${ch.id}: ${ch.category} into 3D Lab! Test and watch the vectors.`, 'orange');
+    }
+
+    function updateActiveHudState() {
+      if (!activeChallengeId) return;
+      const ch = challengesData.find((c) => c.id === activeChallengeId);
+      if (!ch) return;
+
+      document.getElementById('activeChTitle').textContent = `Challenge ${ch.id}: ${ch.category}`;
+      document.getElementById('activeChBadge').textContent = ch.category;
+      document.getElementById('activeChPrompt').textContent = ch.formula;
+
+      const isSolved = ChallengeEngine.solved.has(ch.id - 1);
+      const statusBadge = document.getElementById('activeChLiveStatus');
+      const verifyBtn = document.getElementById('btnActiveChVerify');
+
+      if (isSolved) {
+        statusBadge.className = 'text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30';
+        statusBadge.textContent = 'Status: Solved ✅';
+        verifyBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-500 text-slate-950 transition';
+        verifyBtn.innerHTML = '<span>✅ Solved</span>';
+      } else {
+        statusBadge.className = 'text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30';
+        statusBadge.textContent = 'Target: Ready to Verify';
+        verifyBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 transition active:scale-95 flex items-center gap-1 shadow-md shadow-amber-500/20';
+        verifyBtn.innerHTML = '<span>⚡ Verify Goal</span>';
+      }
+    }
+
+    function verifyActiveChallengeInLab() {
+      if (!activeChallengeId) return;
+      const chIdx = activeChallengeId - 1;
+      const ch = challengesData[chIdx];
+
+      let isGoalMet = false;
+      if (ch.liveCheck) {
+        isGoalMet = ch.liveCheck();
+      } else {
+        isGoalMet = true;
+      }
+
+      if (isGoalMet) {
+        ChallengeEngine.markSolved(chIdx);
+        updateFeedbackBanner('🎉', `Goal Verified! Challenge ${ch.id} (${ch.category}) Solved!`, 'emerald');
+      } else {
+        updateFeedbackBanner('⚠️', `Not quite yet! Check the condition for Challenge ${ch.id}: ${ch.hint}`, 'rose');
+      }
+    }
+
+    function dismissActiveChallengeHud() {
+      const hud = document.getElementById('activeLabChallengeHud');
+      if (hud) hud.classList.add('hidden');
     }
 
     /*************************************************************************
-     * 9. WINDOW RESIZE & MAIN ANIMATION LOOP
+     * 12. WINDOW RESIZE & MAIN ANIMATION LOOP
      *************************************************************************/
     function onWindowResize() {
       const container = document.getElementById('canvas3DContainer');
@@ -1622,6 +2569,8 @@
       initMain3DScene();
       initBook3DExample();
       setExperiment('A');
+      ChallengeEngine.init();
+      QuizEngine.init();
       requestAnimationFrame(animateLoop);
     };
   </script>
